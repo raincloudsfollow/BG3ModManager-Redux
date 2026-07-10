@@ -28,6 +28,51 @@
 	<ResourceDictionary.MergedDictionaries>
 		<ResourceDictionary Source="DefaultStyles/ComboBox.xaml" />
 	</ResourceDictionary.MergedDictionaries>
+	<!--  Bridge legacy AdonisUI controls into the Redux semantic palette.  -->
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.ForegroundBrush}" Color="{DynamicResource ReduxTextPrimaryColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.DisabledForegroundBrush}" Color="{DynamicResource ReduxTextMutedColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.AccentBrush}" Color="{DynamicResource ReduxAccentColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.AccentForegroundBrush}" Color="{DynamicResource ReduxAccentForegroundColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.AccentInteractionBorderBrush}" Color="{DynamicResource ReduxAccentHoverColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.AlertBrush}" Color="{DynamicResource ReduxWarningColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.SuccessBrush}" Color="{DynamicResource ReduxSuccessColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer0BackgroundBrush}" Color="{DynamicResource ReduxWindowColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer1BackgroundBrush}" Color="{DynamicResource ReduxSurfaceElevatedColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer1BorderBrush}" Color="{DynamicResource ReduxBorderColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer1HighlightBrush}" Color="{DynamicResource ReduxAccentSoftColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer1HighlightBorderBrush}" Color="{DynamicResource ReduxBorderStrongColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer1IntenseHighlightBrush}" Color="{DynamicResource ReduxSelectionColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer1IntenseHighlightBorderBrush}" Color="{DynamicResource ReduxAccentColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer1InteractionBrush}" Color="{DynamicResource ReduxAccentSoftColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer1InteractionBorderBrush}" Color="{DynamicResource ReduxAccentColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer1InteractionForegroundBrush}" Color="{DynamicResource ReduxTextPrimaryColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer2BackgroundBrush}" Color="{DynamicResource ReduxSurfaceColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer2BorderBrush}" Color="{DynamicResource ReduxBorderColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer2HighlightBrush}" Color="{DynamicResource ReduxAccentSoftColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer2HighlightBorderBrush}" Color="{DynamicResource ReduxBorderStrongColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer2IntenseHighlightBrush}" Color="{DynamicResource ReduxSelectionColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer2IntenseHighlightBorderBrush}" Color="{DynamicResource ReduxAccentColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer2InteractionBrush}" Color="{DynamicResource ReduxAccentSoftColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer2InteractionBorderBrush}" Color="{DynamicResource ReduxAccentColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer2InteractionForegroundBrush}" Color="{DynamicResource ReduxTextPrimaryColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer3BackgroundBrush}" Color="{DynamicResource ReduxSurfaceMutedColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer3BorderBrush}" Color="{DynamicResource ReduxBorderColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer3HighlightBrush}" Color="{DynamicResource ReduxAccentSoftColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer3HighlightBorderBrush}" Color="{DynamicResource ReduxBorderStrongColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer3IntenseHighlightBrush}" Color="{DynamicResource ReduxSelectionColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer3IntenseHighlightBorderBrush}" Color="{DynamicResource ReduxAccentColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer3InteractionBrush}" Color="{DynamicResource ReduxAccentSoftColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer3InteractionBorderBrush}" Color="{DynamicResource ReduxAccentColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer3InteractionForegroundBrush}" Color="{DynamicResource ReduxTextPrimaryColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer4BackgroundBrush}" Color="{DynamicResource ReduxListInteriorColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer4BorderBrush}" Color="{DynamicResource ReduxBorderColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer4HighlightBrush}" Color="{DynamicResource ReduxAccentSoftColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer4HighlightBorderBrush}" Color="{DynamicResource ReduxBorderStrongColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer4IntenseHighlightBrush}" Color="{DynamicResource ReduxSelectionColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer4IntenseHighlightBorderBrush}" Color="{DynamicResource ReduxAccentColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer4InteractionBrush}" Color="{DynamicResource ReduxAccentSoftColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer4InteractionBorderBrush}" Color="{DynamicResource ReduxAccentColor}" />
+	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.Layer4InteractionForegroundBrush}" Color="{DynamicResource ReduxTextPrimaryColor}" />
 	<conv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 	<conv:BoolToVisibilityConverterReversed x:Key="BoolToVisibilityConverterReversed" />
 	<conv:ModExistsConverter x:Key="ModExistsConverter" />
@@ -124,7 +169,7 @@
 	<Style BasedOn="{StaticResource {x:Type ToolTip}}" TargetType="{x:Type ToolTip}">
 		<Setter Property="OverridesDefaultStyle" Value="true" />
 		<Setter Property="HasDropShadow" Value="True" />
-		<Setter Property="Foreground" Value="{DynamicResource {x:Static adonisUI:Brushes.ForegroundBrush}}" />
+		<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
 		<Setter Property="Template">
 			<Setter.Value>
 				<ControlTemplate TargetType="ToolTip">
@@ -132,9 +177,10 @@
 					    Width="{TemplateBinding Width}"
 					    Height="{TemplateBinding Height}"
 					    Padding="4"
-					    Background="{DynamicResource {x:Static adonisUI:Brushes.Layer4BackgroundBrush}}"
-					    BorderBrush="{DynamicResource {x:Static adonisUI:Brushes.AccentInteractionBorderBrush}}"
-					    BorderThickness="2">
+					    Background="{DynamicResource ReduxSurfaceBrush}"
+					    BorderBrush="{DynamicResource ReduxBorderStrongBrush}"
+					    BorderThickness="1"
+					    CornerRadius="8">
 						<ContentPresenter Margin="4" HorizontalAlignment="Left" VerticalAlignment="Top" />
 					</Border>
 					<ControlTemplate.Triggers>
@@ -209,6 +255,8 @@
 	</Style>
 
 	<Style x:Key="ModuleShortDescListBox" BasedOn="{StaticResource {x:Type ListBox}}" TargetType="ListBox">
+		<Setter Property="Background" Value="{DynamicResource ReduxListInteriorBrush}" />
+		<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
 		<Setter Property="ItemContainerStyle">
 			<Setter.Value>
 				<Style TargetType="ListBoxItem">
@@ -219,7 +267,7 @@
 		<Setter Property="Margin" Value="2" />
 		<Setter Property="Padding" Value="0" />
 		<Setter Property="BorderThickness" Value="1" />
-		<Setter Property="BorderBrush" Value="{DynamicResource {x:Static adonisUI:Brushes.AccentInteractionBorderBrush}}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderBrush}" />
 	</Style>
 
 	<DataTemplate x:Key="DependencyModTemplate" DataType="{x:Type data:ModuleShortDesc}">
@@ -254,6 +302,12 @@
 
 	<Style x:Key="DivinityModDataListItem" BasedOn="{StaticResource {x:Type ListViewItem}}" TargetType="{x:Type ListViewItem}">
 		<Setter Property="behavior:ScreenReaderHelperBehavior.Automatic" Value="True" />
+		<Setter Property="MinHeight" Value="32" />
+		<Setter Property="Padding" Value="8,3" />
+		<Setter Property="Margin" Value="0,0,0,1" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="BorderBrush" Value="Transparent" />
+		<Setter Property="BorderThickness" Value="3,0,0,0" />
 		<!--<Style.Resources>
 			<LinearGradientBrush x:Key="ListItemHoverFill_Selected" StartPoint="0,0" EndPoint="0,1">
 				<GradientStop Offset="0" Color="#FFD1FFD1" />
@@ -373,7 +427,7 @@
 					<Setter Property="Control.Template">
 						<Setter.Value>
 							<ControlTemplate>
-								<Rectangle SnapsToDevicePixels="true" Stroke="{DynamicResource {x:Static adonisUI:Brushes.AccentIntenseHighlightBorderBrush}}" StrokeThickness="2" />
+								<Rectangle SnapsToDevicePixels="true" Stroke="{DynamicResource ReduxAccentHoverBrush}" StrokeThickness="2" />
 							</ControlTemplate>
 						</Setter.Value>
 					</Setter>
@@ -381,6 +435,13 @@
 			</Setter.Value>
 		</Setter>
 		<Style.Triggers>
+			<Trigger Property="IsMouseOver" Value="True">
+				<Setter Property="Background" Value="{DynamicResource ReduxAccentSoftBrush}" />
+			</Trigger>
+			<Trigger Property="IsSelected" Value="True">
+				<Setter Property="Background" Value="{DynamicResource ReduxSelectionBrush}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource ReduxAccentBrush}" />
+			</Trigger>
 			<MultiDataTrigger>
 				<MultiDataTrigger.Conditions>
 					<Condition Binding="{Binding HasColorOverride}" Value="True" />
@@ -433,7 +494,7 @@
 		<Setter Property="Tag" Value="{Binding UpdatedMod}" />
 	</Style>
 	<Style BasedOn="{StaticResource {x:Type ListView}}" TargetType="controls:ModListView">
-		<Setter Property="Background" Value="{DynamicResource {x:Static adonisUI:Brushes.Layer4BackgroundBrush}}" />
+		<Setter Property="Background" Value="{DynamicResource ReduxListInteriorBrush}" />
 	</Style>
 	<Style x:Key="ModOrderListView" BasedOn="{StaticResource {x:Type ListView}}" TargetType="ListView">
 		<Setter Property="KeyboardNavigation.AcceptsReturn" Value="False" />
@@ -448,6 +509,20 @@
 						<ScrollViewer Name="ListScrollViewer" Style="{DynamicResource {x:Static GridView.GridViewScrollViewerStyleKey}}">
 							<ItemsPresenter x:Name="ListItemsPresenter" />
 						</ScrollViewer>
+						<Border Name="EmptyStatePanel"
+							Margin="24"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+							IsHitTestVisible="False"
+							Visibility="Collapsed">
+							<StackPanel HorizontalAlignment="Center">
+								<TextBlock HorizontalAlignment="Center" FontSize="14" FontWeight="SemiBold" Text="No mods here yet" />
+								<TextBlock Margin="0,6,0,0"
+									HorizontalAlignment="Center"
+									Foreground="{DynamicResource ReduxTextMutedBrush}"
+									Text="Use Install Mod or move a mod into this list." />
+							</StackPanel>
+						</Border>
 						<Rectangle Name="DisabledRect"
 						    HorizontalAlignment="Stretch"
 						    VerticalAlignment="Stretch"
@@ -457,6 +532,9 @@
 						    Visibility="Collapsed" />
 					</Grid>
 					<ControlTemplate.Triggers>
+						<Trigger Property="HasItems" Value="False">
+							<Setter TargetName="EmptyStatePanel" Property="Visibility" Value="Visible" />
+						</Trigger>
 						<Trigger Property="IsGrouping" Value="True">
 							<Setter TargetName="ListScrollViewer" Property="CanContentScroll" Value="False" />
 						</Trigger>
@@ -540,10 +618,11 @@
 				<Setter Property="Template">
 					<Setter.Value>
 						<ControlTemplate TargetType="controls:AutomationTooltip">
-							<Border Padding="8"
-							    Background="{DynamicResource {x:Static adonisUI:Brushes.Layer4BackgroundBrush}}"
-							    BorderBrush="{DynamicResource {x:Static adonisUI:Brushes.AccentInteractionBorderBrush}}"
-							    BorderThickness="2">
+							<Border Padding="10"
+							    Background="{DynamicResource ReduxSurfaceBrush}"
+							    BorderBrush="{DynamicResource ReduxBorderStrongBrush}"
+							    BorderThickness="1"
+							    CornerRadius="8">
 								<ContentPresenter />
 							</Border>
 						</ControlTemplate>
@@ -559,7 +638,7 @@
 				<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="TextBlock">
 					<Setter Property="TextWrapping" Value="Wrap" />
 					<Setter Property="Margin" Value="2" />
-					<Setter Property="Foreground" Value="{DynamicResource {x:Static adonisUI:Brushes.ForegroundBrush}}" />
+					<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
 					<!--<Setter Property="FontFamily" Value="Arial" />-->
 				</Style>
 				<Style BasedOn="{StaticResource {x:Type ListBox}}" TargetType="ListBox" />
@@ -572,7 +651,7 @@
 				</Grid.ColumnDefinitions>
 				<TextBlock FontSize="16"
 				    FontWeight="Bold"
-				    Foreground="{DynamicResource {x:Static adonisUI:Brushes.AlertBrush}}"
+				    Foreground="{DynamicResource ReduxAccentHoverBrush}"
 				    Text="{Binding DisplayName}">
 					<TextBlock.Effect>
 						<DropShadowEffect BlurRadius="4"
@@ -595,8 +674,8 @@
 				</StackPanel>
 			</Grid>
 
-			<Separator Background="{DynamicResource {x:Static adonisUI:Brushes.Layer1HighlightBorderBrush}}" />
-			<TextBlock TextWrapping="Wrap" Visibility="{Binding AuthorVisibility}"><Run Text="Created by " /><Run FontWeight="Bold" Foreground="#3da2fa" Text="{Binding Author}" />
+			<Separator Background="{DynamicResource ReduxBorderBrush}" />
+			<TextBlock TextWrapping="Wrap" Visibility="{Binding AuthorVisibility}"><Run Text="Created by " /><Run FontWeight="Bold" Foreground="{DynamicResource ReduxAccentHoverBrush}" Text="{Binding Author}" />
 				<TextBlock.Effect>
 					<DropShadowEffect BlurRadius="4"
 					    Direction="330"
@@ -610,9 +689,9 @@
 			    TextWrapping="Wrap"
 			    Visibility="{Binding DescriptionVisibility}" />
 			<StackPanel Orientation="Vertical" Visibility="{Binding NexusModsInformationVisibility}">
-				<Separator Background="{DynamicResource {x:Static adonisUI:Brushes.Layer1HighlightBorderBrush}}" />
+				<Separator Background="{DynamicResource ReduxBorderBrush}" />
 				<TextBlock Text="{Binding NexusModsTooltipInfo}" />
-				<Separator Background="{DynamicResource {x:Static adonisUI:Brushes.Layer1HighlightBorderBrush}}" />
+				<Separator Background="{DynamicResource ReduxBorderBrush}" />
 			</StackPanel>
 			<StackPanel Margin="2" Orientation="Vertical" Visibility="{Binding DependencyVisibility, FallbackValue=Collapsed}">
 				<TextBlock FontWeight="Bold" Text="Dependencies:" />
@@ -645,9 +724,9 @@
 				</ItemsControl>
 			</StackPanel>
 			<StackPanel Orientation="Vertical">
-				<Separator Background="{DynamicResource {x:Static adonisUI:Brushes.Layer1HighlightBorderBrush}}" />
+				<Separator Background="{DynamicResource ReduxBorderBrush}" />
 				<TextBlock Text="{Binding FileName}" Visibility="{Binding HasFilePathVisibility}" />
-				<TextBlock Foreground="Goldenrod" Text="{Binding ScriptExtenderSupportToolTipText}" Visibility="{Binding ExtenderStatusVisibility}" />
+				<TextBlock Foreground="{DynamicResource ReduxWarningBrush}" Text="{Binding ScriptExtenderSupportToolTipText}" Visibility="{Binding ExtenderStatusVisibility}" />
 				<TextBlock Margin="2" Text="{Binding LastModifiedDateText}" />
 			</StackPanel>
 			<StackPanel Margin="2" Orientation="Vertical" Visibility="{Binding IsForceLoaded, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
@@ -826,8 +905,15 @@
 		</controls:ModEntryGrid>
 	</DataTemplate>
 	<Style x:Key="GridViewLeftContainerStyle" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}" TargetType="{x:Type GridViewColumnHeader}">
+		<Setter Property="Height" Value="30" />
+		<Setter Property="Padding" Value="8,0" />
+		<Setter Property="FontWeight" Value="SemiBold" />
+		<Setter Property="Background" Value="{DynamicResource ReduxSurfaceMutedBrush}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderBrush}" />
+		<Setter Property="Foreground" Value="{DynamicResource ReduxTextSecondaryBrush}" />
 		<Setter Property="HorizontalContentAlignment" Value="Left" />
-		<Setter Property="Margin" Value="4,0,0,0" />
+		<Setter Property="VerticalContentAlignment" Value="Center" />
+		<Setter Property="Margin" Value="0" />
 	</Style>
 	<Style x:Key="GridViewCenteredContainerStyle" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}" TargetType="{x:Type GridViewColumnHeader}">
 		<Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -971,7 +1057,7 @@
 		<Setter Property="OverlayStyle">
 			<Setter.Value>
 				<Style TargetType="Rectangle">
-					<Setter Property="Fill" Value="{DynamicResource {x:Static adonisUI:Brushes.Layer4BackgroundBrush}}" />
+					<Setter Property="Fill" Value="{DynamicResource ReduxWindowBrush}" />
 					<!--<Setter Property="Opacity" Value="0.75" />-->
 				</Style>
 			</Setter.Value>
@@ -980,7 +1066,7 @@
 			<Setter.Value>
 				<Style BasedOn="{StaticResource {x:Type ProgressBar}}" TargetType="ProgressBar">
 					<Setter Property="Visibility" Value="Collapsed" />
-					<Setter Property="Foreground" Value="{DynamicResource {x:Static adonisUI:Brushes.AccentInteractionBrush}}" />
+					<Setter Property="Foreground" Value="{DynamicResource ReduxAccentBrush}" />
 				</Style>
 			</Setter.Value>
 		</Setter>
@@ -1013,11 +1099,11 @@
 									    Grid.Column="1"
 									    HorizontalAlignment="Stretch"
 									    VerticalAlignment="Stretch">
-										<Border Background="{DynamicResource {x:Static adonisUI:Brushes.Layer4BackgroundBrush}}"
-										    BorderBrush="{DynamicResource {x:Static adonisUI:Brushes.Layer4InteractionBorderBrush}}"
+										<Border Background="{DynamicResource ReduxSurfaceElevatedBrush}"
+										    BorderBrush="{DynamicResource ReduxBorderStrongBrush}"
 										    BorderThickness="1"
-										    CornerRadius="2">
-											<Border Margin="1" Background="{DynamicResource {x:Static adonisUI:Brushes.Layer1BackgroundBrush}}" CornerRadius="1.5">
+										    CornerRadius="8">
+											<Border Margin="1" Background="{DynamicResource ReduxSurfaceBrush}" CornerRadius="7">
 												<Grid x:Name="_grid" MinWidth="150">
 													<Grid.RowDefinitions>
 														<RowDefinition />
@@ -1174,6 +1260,8 @@
 								    FontSize="{TemplateBinding FontSize}"
 								    FontStyle="{TemplateBinding FontStyle}"
 								    FontWeight="{TemplateBinding FontWeight}"
+								    Background="Transparent"
+								    BorderThickness="0"
 								    Foreground="{TemplateBinding Foreground}"
 								    IsReadOnly="True"
 								    Text="{TemplateBinding Text}"

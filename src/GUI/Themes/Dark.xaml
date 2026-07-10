@@ -6,6 +6,43 @@
 	<ResourceDictionary.MergedDictionaries>
 		<ResourceDictionary Source="pack://application:,,,/AdonisUI;component/ColorSchemes/Dark.xaml" />
 	</ResourceDictionary.MergedDictionaries>
+	<!--  BG3 Mod Manager Redux semantic palette  -->
+	<Color x:Key="ReduxWindowColor">#141218</Color>
+	<Color x:Key="ReduxListInteriorColor">#17151C</Color>
+	<Color x:Key="ReduxSurfaceColor">#1E1A26</Color>
+	<Color x:Key="ReduxSurfaceElevatedColor">#211D28</Color>
+	<Color x:Key="ReduxSurfaceMutedColor">#24202C</Color>
+	<Color x:Key="ReduxBorderColor">#312B3A</Color>
+	<Color x:Key="ReduxBorderStrongColor">#3A3346</Color>
+	<Color x:Key="ReduxAccentColor">#8A6AF1</Color>
+	<Color x:Key="ReduxAccentHoverColor">#A58BFF</Color>
+	<Color x:Key="ReduxAccentSoftColor">#342B49</Color>
+	<Color x:Key="ReduxSelectionColor">#3A2E50</Color>
+	<Color x:Key="ReduxCyanColor">#3FA37A</Color>
+	<Color x:Key="ReduxSuccessColor">#3FA37A</Color>
+	<Color x:Key="ReduxWarningColor">#D7A24B</Color>
+	<Color x:Key="ReduxTextPrimaryColor">#ECE8F2</Color>
+	<Color x:Key="ReduxTextSecondaryColor">#B8B1C7</Color>
+	<Color x:Key="ReduxTextMutedColor">#8F879E</Color>
+	<Color x:Key="ReduxAccentForegroundColor">#F8F5FF</Color>
+	<SolidColorBrush x:Key="ReduxWindowBrush" Color="{DynamicResource ReduxWindowColor}" />
+	<SolidColorBrush x:Key="ReduxListInteriorBrush" Color="{DynamicResource ReduxListInteriorColor}" />
+	<SolidColorBrush x:Key="ReduxSurfaceBrush" Color="{DynamicResource ReduxSurfaceColor}" />
+	<SolidColorBrush x:Key="ReduxSurfaceElevatedBrush" Color="{DynamicResource ReduxSurfaceElevatedColor}" />
+	<SolidColorBrush x:Key="ReduxSurfaceMutedBrush" Color="{DynamicResource ReduxSurfaceMutedColor}" />
+	<SolidColorBrush x:Key="ReduxBorderBrush" Color="{DynamicResource ReduxBorderColor}" />
+	<SolidColorBrush x:Key="ReduxBorderStrongBrush" Color="{DynamicResource ReduxBorderStrongColor}" />
+	<SolidColorBrush x:Key="ReduxAccentBrush" Color="{DynamicResource ReduxAccentColor}" />
+	<SolidColorBrush x:Key="ReduxAccentHoverBrush" Color="{DynamicResource ReduxAccentHoverColor}" />
+	<SolidColorBrush x:Key="ReduxAccentSoftBrush" Color="{DynamicResource ReduxAccentSoftColor}" />
+	<SolidColorBrush x:Key="ReduxSelectionBrush" Color="{DynamicResource ReduxSelectionColor}" />
+	<SolidColorBrush x:Key="ReduxCyanBrush" Color="{DynamicResource ReduxCyanColor}" />
+	<SolidColorBrush x:Key="ReduxSuccessBrush" Color="{DynamicResource ReduxSuccessColor}" />
+	<SolidColorBrush x:Key="ReduxWarningBrush" Color="{DynamicResource ReduxWarningColor}" />
+	<SolidColorBrush x:Key="ReduxTextPrimaryBrush" Color="{DynamicResource ReduxTextPrimaryColor}" />
+	<SolidColorBrush x:Key="ReduxTextSecondaryBrush" Color="{DynamicResource ReduxTextSecondaryColor}" />
+	<SolidColorBrush x:Key="ReduxTextMutedBrush" Color="{DynamicResource ReduxTextMutedColor}" />
+	<SolidColorBrush x:Key="ReduxAccentForegroundBrush" Color="{DynamicResource ReduxAccentForegroundColor}" />
 	<!--  colors  -->
 	<Color x:Key="{x:Static local:DivinityColors.TagBackgroundColor}">#495588</Color>
 	<Color x:Key="{x:Static local:DivinityColors.CustomTagBackgroundColor}">#497688</Color>

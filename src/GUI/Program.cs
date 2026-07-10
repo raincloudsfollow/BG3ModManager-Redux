@@ -1,13 +1,11 @@
 ﻿using DivinityModManager.Util.ScreenReader;
 
 using System.Reflection;
-using System.Windows;
 
 namespace DivinityModManager;
 
 internal class Program
 {
-	private static SplashScreen _splash;
 	private static string _libDirectory;
 
 	private static Assembly ResolveAssembly(object sender, ResolveEventArgs args)
@@ -40,13 +38,7 @@ internal class Program
 		_libDirectory = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "_Lib");
 		AppDomain.CurrentDomain.AssemblyResolve += ResolveAssembly;
 
-		_splash = new SplashScreen("Resources/BG3MMSplashScreen.png");
-		_splash.Show(false, false);
-
-		var app = new App
-		{
-			Splash = _splash
-		};
+		var app = new App();
 		app.Exit += OnAppExit;
 		app.InitializeComponent();
 		app.Run();

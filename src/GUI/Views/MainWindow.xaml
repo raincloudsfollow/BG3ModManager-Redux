@@ -21,8 +21,8 @@
     Width="1600"
     Height="800"
     d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
-    TitleBarBackground="#4e38c9"
-    TitleBarForeground="{DynamicResource {x:Static adonisUI:Brushes.AccentForegroundBrush}}"
+    TitleBarBackground="{DynamicResource ReduxSurfaceElevatedBrush}"
+    TitleBarForeground="{DynamicResource ReduxTextPrimaryBrush}"
     mc:Ignorable="d">
 	<Window.Style>
 		<Style BasedOn="{StaticResource {x:Type Window}}" TargetType="Window" />
@@ -40,8 +40,8 @@
 				<Setter Property="BorderBrush" Value="{DynamicResource {x:Static adonisUI:Brushes.Layer1BorderBrush}}" />
 				<Setter Property="CaptionForeground" Value="{DynamicResource {x:Static adonisUI:Brushes.AccentForegroundBrush}}" />
 				<Setter Property="Foreground" Value="{DynamicResource {x:Static adonisUI:Brushes.ForegroundBrush}}" />
-				<Setter Property="WindowBackground" Value="#4e38c9" />
-				<Setter Property="WindowBorderBrush" Value="{DynamicResource {x:Static adonisUI:Brushes.AccentInteractionBorderBrush}}" />
+				<Setter Property="WindowBackground" Value="{DynamicResource ReduxSurfaceElevatedBrush}" />
+				<Setter Property="WindowBorderBrush" Value="{DynamicResource ReduxAccentBrush}" />
 				<Setter Property="CloseButtonStyle">
 					<Setter.Value>
 						<Style BasedOn="{StaticResource {x:Type Button}}" TargetType="Button">

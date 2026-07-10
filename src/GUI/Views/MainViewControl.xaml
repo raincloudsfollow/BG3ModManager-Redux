@@ -29,15 +29,87 @@
 				<ResourceDictionary Source="../Themes/MainResourceDictionary.xaml" />
 			</ResourceDictionary.MergedDictionaries>
 			<Style BasedOn="{StaticResource {x:Type Button}}" TargetType="{x:Type Button}" />
+			<ControlTemplate x:Key="ReduxDialogButtonTemplate" TargetType="{x:Type Button}">
+				<Border x:Name="ButtonChrome"
+					Padding="{TemplateBinding Padding}"
+					Background="{TemplateBinding Background}"
+					BorderBrush="{TemplateBinding BorderBrush}"
+					BorderThickness="{TemplateBinding BorderThickness}"
+					CornerRadius="6">
+					<ContentPresenter HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						Content="{TemplateBinding Content}"
+						ContentTemplate="{TemplateBinding ContentTemplate}"
+						RecognizesAccessKey="True" />
+				</Border>
+				<ControlTemplate.Triggers>
+					<Trigger Property="IsMouseOver" Value="True">
+						<Setter TargetName="ButtonChrome" Property="Background" Value="{DynamicResource ReduxAccentSoftBrush}" />
+						<Setter TargetName="ButtonChrome" Property="BorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
+					</Trigger>
+					<Trigger Property="IsPressed" Value="True">
+						<Setter TargetName="ButtonChrome" Property="Background" Value="{DynamicResource ReduxSelectionBrush}" />
+						<Setter TargetName="ButtonChrome" Property="BorderBrush" Value="{DynamicResource ReduxAccentBrush}" />
+					</Trigger>
+					<Trigger Property="IsEnabled" Value="False">
+						<Setter TargetName="ButtonChrome" Property="Opacity" Value="0.45" />
+					</Trigger>
+				</ControlTemplate.Triggers>
+			</ControlTemplate>
+			<ControlTemplate x:Key="ReduxDialogPrimaryButtonTemplate" TargetType="{x:Type Button}">
+				<Border x:Name="ButtonChrome"
+					Padding="{TemplateBinding Padding}"
+					Background="{TemplateBinding Background}"
+					BorderBrush="{TemplateBinding BorderBrush}"
+					BorderThickness="{TemplateBinding BorderThickness}"
+					CornerRadius="6">
+					<ContentPresenter HorizontalAlignment="Center"
+						VerticalAlignment="Center"
+						Content="{TemplateBinding Content}"
+						ContentTemplate="{TemplateBinding ContentTemplate}"
+						RecognizesAccessKey="True" />
+				</Border>
+				<ControlTemplate.Triggers>
+					<Trigger Property="IsMouseOver" Value="True">
+						<Setter TargetName="ButtonChrome" Property="Background" Value="{DynamicResource ReduxAccentHoverBrush}" />
+					</Trigger>
+					<Trigger Property="IsPressed" Value="True">
+						<Setter TargetName="ButtonChrome" Property="Background" Value="{DynamicResource ReduxSelectionBrush}" />
+					</Trigger>
+					<Trigger Property="IsEnabled" Value="False">
+						<Setter TargetName="ButtonChrome" Property="Opacity" Value="0.45" />
+					</Trigger>
+				</ControlTemplate.Triggers>
+			</ControlTemplate>
+			<Style x:Key="ReduxDialogButtonStyle" TargetType="{x:Type Button}">
+				<Setter Property="Height" Value="30" />
+				<Setter Property="Padding" Value="14,4" />
+				<Setter Property="Background" Value="{DynamicResource ReduxSurfaceMutedBrush}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
+				<Setter Property="Template" Value="{StaticResource ReduxDialogButtonTemplate}" />
+			</Style>
+			<Style x:Key="ReduxDialogPrimaryButtonStyle" BasedOn="{StaticResource ReduxDialogButtonStyle}" TargetType="{x:Type Button}">
+				<Setter Property="Background" Value="{DynamicResource ReduxAccentBrush}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource ReduxAccentHoverBrush}" />
+				<Setter Property="Foreground" Value="{DynamicResource ReduxAccentForegroundBrush}" />
+				<Setter Property="Template" Value="{StaticResource ReduxDialogPrimaryButtonTemplate}" />
+			</Style>
 			<Style TargetType="{x:Type xc:MessageBox}">
 				<Setter Property="Width" Value="600" />
-				<Setter Property="Background" Value="{DynamicResource {x:Static adonisUI:Brushes.Layer0BackgroundBrush}}" />
-				<Setter Property="ButtonRegionBackground" Value="{DynamicResource {x:Static adonisUI:Brushes.Layer0BackgroundBrush}}" />
-				<Setter Property="BorderBrush" Value="{DynamicResource {x:Static adonisUI:Brushes.Layer1BorderBrush}}" />
-				<Setter Property="CaptionForeground" Value="{DynamicResource {x:Static adonisUI:Brushes.AccentForegroundBrush}}" />
-				<Setter Property="Foreground" Value="{DynamicResource {x:Static adonisUI:Brushes.ForegroundBrush}}" />
-				<Setter Property="WindowBackground" Value="#4e38c9" />
-				<Setter Property="WindowBorderBrush" Value="{DynamicResource {x:Static adonisUI:Brushes.AccentInteractionBorderBrush}}" />
+				<Setter Property="Background" Value="{DynamicResource ReduxSurfaceBrush}" />
+				<Setter Property="ButtonRegionBackground" Value="{DynamicResource ReduxSurfaceElevatedBrush}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderBrush}" />
+				<Setter Property="CaptionForeground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
+				<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
+				<Setter Property="WindowBackground" Value="{DynamicResource ReduxSurfaceElevatedBrush}" />
+				<Setter Property="WindowBorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
+				<Setter Property="WindowBorderThickness" Value="1" />
+				<Setter Property="YesButtonStyle" Value="{StaticResource ReduxDialogPrimaryButtonStyle}" />
+				<Setter Property="NoButtonStyle" Value="{StaticResource ReduxDialogButtonStyle}" />
+				<Setter Property="OkButtonStyle" Value="{StaticResource ReduxDialogPrimaryButtonStyle}" />
+				<Setter Property="CancelButtonStyle" Value="{StaticResource ReduxDialogButtonStyle}" />
 				<Setter Property="CloseButtonStyle">
 					<Setter.Value>
 						<Style BasedOn="{StaticResource {x:Type Button}}" TargetType="Button">
@@ -78,7 +150,7 @@
 			</Style>
 		</ResourceDictionary>
 	</UserControl.Resources>
-	<Grid>
+	<Grid Background="{DynamicResource ReduxWindowBrush}">
 		<Grid.RowDefinitions>
 			<RowDefinition Height="*" />
 			<RowDefinition Height="Auto" />
@@ -135,14 +207,17 @@
 				    HorizontalAlignment="Stretch"
 				    VerticalAlignment="Stretch"
 				    Panel.ZIndex="98"
-				    Fill="{DynamicResource {x:Static adonisUI:Brushes.Layer3BackgroundBrush}}" />
-				<Grid Background="{DynamicResource {x:Static adonisUI:Brushes.Layer3BackgroundBrush}}">
+				    Fill="{DynamicResource ReduxWindowBrush}" />
+				<Grid Background="{DynamicResource ReduxWindowBrush}">
 					<Grid.ColumnDefinitions>
 						<ColumnDefinition Width="*" />
 						<ColumnDefinition Width="Auto" />
 						<!--<ColumnDefinition Width="*" />-->
 					</Grid.ColumnDefinitions>
-					<Menu x:Name="TopMenuBar" Padding="2">
+					<Menu x:Name="TopMenuBar"
+						Padding="4,2"
+						Background="{DynamicResource ReduxWindowBrush}"
+						Foreground="{DynamicResource ReduxTextPrimaryBrush}">
 						<MenuItem x:Name="FileMenuItem" Header="File" />
 						<MenuItem x:Name="EditMenuItem" Header="Edit" />
 						<MenuItem x:Name="SettingsMenuItem" Header="Settings" />
@@ -292,7 +367,7 @@
 				</Grid>
 				<Separator Grid.Row="1"
 				    Height="1"
-				    Background="LightGray"
+				    Background="{DynamicResource ReduxBorderBrush}"
 				    BorderThickness="0" />
 				<Grid x:Name="ModOrderPanel" Grid.Row="2" Loaded="ModOrderPanel_Loaded">
 					<Grid.RowDefinitions>
@@ -300,29 +375,135 @@
 						<RowDefinition Height="Auto" />
 						<RowDefinition Height="*" />
 					</Grid.RowDefinitions>
-					<Grid Margin="4">
+					<Border Margin="10,8,10,10"
+					    Padding="10,8"
+					    Background="{DynamicResource ReduxSurfaceElevatedBrush}"
+					    BorderBrush="{DynamicResource ReduxBorderBrush}"
+					    BorderThickness="1"
+					    CornerRadius="8">
+						<Grid>
 						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="Auto" />
 							<ColumnDefinition Width="Auto" />
 							<ColumnDefinition Width="Auto" />
 							<ColumnDefinition Width="*" />
 							<ColumnDefinition Width="Auto" />
 						</Grid.ColumnDefinitions>
 						<Grid.Resources>
+							<ControlTemplate x:Key="ToolbarButtonTemplate" TargetType="{x:Type Button}">
+								<Border x:Name="ButtonChrome"
+									Padding="{TemplateBinding Padding}"
+									Background="{TemplateBinding Background}"
+									BorderBrush="{TemplateBinding BorderBrush}"
+									BorderThickness="{TemplateBinding BorderThickness}"
+									CornerRadius="6">
+									<ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+										VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+										Content="{TemplateBinding Content}"
+										ContentStringFormat="{TemplateBinding ContentStringFormat}"
+										ContentTemplate="{TemplateBinding ContentTemplate}"
+										RecognizesAccessKey="True" />
+								</Border>
+								<ControlTemplate.Triggers>
+									<Trigger Property="IsMouseOver" Value="True">
+										<Setter TargetName="ButtonChrome" Property="Background" Value="{DynamicResource ReduxAccentSoftBrush}" />
+										<Setter TargetName="ButtonChrome" Property="BorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
+									</Trigger>
+									<Trigger Property="IsPressed" Value="True">
+										<Setter TargetName="ButtonChrome" Property="Background" Value="{DynamicResource ReduxSelectionBrush}" />
+										<Setter TargetName="ButtonChrome" Property="BorderBrush" Value="{DynamicResource ReduxAccentBrush}" />
+									</Trigger>
+									<Trigger Property="IsEnabled" Value="False">
+										<Setter TargetName="ButtonChrome" Property="Opacity" Value="0.45" />
+									</Trigger>
+								</ControlTemplate.Triggers>
+							</ControlTemplate>
+							<ControlTemplate x:Key="ToolbarPrimaryButtonTemplate" TargetType="{x:Type Button}">
+								<Border x:Name="ButtonChrome"
+									Padding="{TemplateBinding Padding}"
+									Background="{TemplateBinding Background}"
+									BorderBrush="{TemplateBinding BorderBrush}"
+									BorderThickness="{TemplateBinding BorderThickness}"
+									CornerRadius="6">
+									<ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+										VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+										Content="{TemplateBinding Content}"
+										ContentStringFormat="{TemplateBinding ContentStringFormat}"
+										ContentTemplate="{TemplateBinding ContentTemplate}"
+										RecognizesAccessKey="True" />
+								</Border>
+								<ControlTemplate.Triggers>
+									<Trigger Property="IsMouseOver" Value="True">
+										<Setter TargetName="ButtonChrome" Property="Background" Value="{DynamicResource ReduxAccentHoverBrush}" />
+									</Trigger>
+									<Trigger Property="IsPressed" Value="True">
+										<Setter TargetName="ButtonChrome" Property="Background" Value="{DynamicResource ReduxSelectionBrush}" />
+									</Trigger>
+									<Trigger Property="IsEnabled" Value="False">
+										<Setter TargetName="ButtonChrome" Property="Opacity" Value="0.45" />
+									</Trigger>
+								</ControlTemplate.Triggers>
+							</ControlTemplate>
 							<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="TextBlock">
 								<Setter Property="VerticalAlignment" Value="Center" />
 								<Setter Property="Margin" Value="2,0,2,0" />
 							</Style>
 							<Style BasedOn="{StaticResource VerticalSeparator}" TargetType="Rectangle">
 								<Setter Property="Margin" Value="8,0,6,0" />
+								<Setter Property="Fill" Value="{DynamicResource ReduxBorderStrongBrush}" />
 							</Style>
-							<Style BasedOn="{StaticResource IconButtonStyle}" TargetType="{x:Type Button}">
+							<Style x:Key="ToolbarButtonBaseStyle" BasedOn="{StaticResource IconButtonStyle}" TargetType="{x:Type Button}">
+								<Setter Property="Width" Value="28" />
+								<Setter Property="Height" Value="30" />
+								<Setter Property="Background" Value="{DynamicResource ReduxSurfaceMutedBrush}" />
+								<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
+								<Setter Property="BorderThickness" Value="1" />
+								<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
+								<Setter Property="HorizontalContentAlignment" Value="Center" />
+								<Setter Property="VerticalContentAlignment" Value="Center" />
+								<Setter Property="Template" Value="{StaticResource ToolbarButtonTemplate}" />
 								<Setter Property="Tag" Value="{Binding}" />
+							</Style>
+							<Style BasedOn="{StaticResource ToolbarButtonBaseStyle}" TargetType="{x:Type Button}" />
+							<Style BasedOn="{StaticResource {x:Type ComboBox}}" TargetType="{x:Type ComboBox}">
+								<Setter Property="MinHeight" Value="30" />
+								<Setter Property="Padding" Value="9,3" />
+								<Setter Property="Background" Value="{DynamicResource ReduxSurfaceMutedBrush}" />
+								<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
+								<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
+								<Setter Property="adonisExtensions:CornerRadiusExtension.CornerRadius" Value="6" />
+							</Style>
+							<Style x:Key="ToolbarTextButtonStyle" BasedOn="{StaticResource ToolbarButtonBaseStyle}" TargetType="{x:Type Button}">
+								<Setter Property="Width" Value="Auto" />
+								<Setter Property="Height" Value="30" />
+								<Setter Property="Margin" Value="2,0,6,0" />
+								<Setter Property="Padding" Value="10,0" />
+								<Setter Property="Background" Value="{DynamicResource ReduxSurfaceMutedBrush}" />
+								<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
+								<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
+								<Setter Property="BorderThickness" Value="1" />
+								<Setter Property="Tag" Value="{Binding}" />
+							</Style>
+							<Style x:Key="ToolbarPrimaryButtonStyle" BasedOn="{StaticResource ToolbarTextButtonStyle}" TargetType="{x:Type Button}">
+								<Setter Property="Background" Value="{DynamicResource ReduxAccentBrush}" />
+								<Setter Property="BorderBrush" Value="{DynamicResource ReduxAccentHoverBrush}" />
+								<Setter Property="Foreground" Value="{DynamicResource ReduxAccentForegroundBrush}" />
+								<Setter Property="Template" Value="{StaticResource ToolbarPrimaryButtonTemplate}" />
 							</Style>
 							<Style BasedOn="{StaticResource {x:Type ContextMenu}}" TargetType="{x:Type ContextMenu}">
 								<Setter Property="DataContext" Value="{Binding RelativeSource={RelativeSource Mode=Self}, Path=PlacementTarget.Tag}" />
 							</Style>
 						</Grid.Resources>
-						<Grid>
+						<Button x:Name="ImportModButton"
+							Margin="0,0,10,0"
+							Style="{StaticResource ToolbarPrimaryButtonStyle}"
+							ToolTip="Install a Mod from an Archive">
+							<StackPanel Orientation="Horizontal">
+								<controls:AutoGrayableImage Margin="0,0,6,0" Source="{StaticResource AddItemImage}" />
+								<TextBlock Text="Install Mod" />
+							</StackPanel>
+						</Button>
+						<Grid Grid.Column="1">
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="Auto" />
 								<ColumnDefinition Width="*" />
@@ -345,7 +526,7 @@
 								</ComboBox.ContextMenu>
 							</ComboBox>
 						</Grid>
-						<Grid Grid.Column="1" Margin="4,0">
+						<Grid Grid.Column="2" Margin="4,0">
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="Auto" />
 								<ColumnDefinition Width="*" />
@@ -377,7 +558,7 @@
 								</ComboBox.ContextMenu>
 							</ComboBox>
 						</Grid>
-						<Grid Grid.Column="2" Margin="1,0,0,0">
+						<Grid Grid.Column="3" Margin="1,0,0,0">
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="Auto" />
 								<ColumnDefinition Width="Auto" />
@@ -409,9 +590,13 @@
 							<Rectangle Grid.Column="1" Margin="8,0,6,0" Style="{StaticResource VerticalSeparator}" />
 							<StackPanel Grid.Column="2" Orientation="Horizontal">
 								<StackPanel.Resources />
-								<TextBlock Text="Export" />
-								<Button x:Name="ExportToModSettingsButton" ToolTip="Export Order to Game">
-									<controls:AutoGrayableImage Source="{StaticResource ExportScriptImage}" />
+								<Button x:Name="ExportToModSettingsButton"
+									Style="{StaticResource ToolbarTextButtonStyle}"
+									ToolTip="Export Order to Game">
+									<StackPanel Orientation="Horizontal">
+										<controls:AutoGrayableImage Margin="0,0,6,0" Source="{StaticResource ExportScriptImage}" />
+										<TextBlock Text="Export to Game" />
+									</StackPanel>
 									<Button.ContextMenu>
 										<ContextMenu>
 											<MenuItem Command="{Binding Path=OpenFileCommand, Source={x:Static dapp:DivinityApp.Commands}}" CommandParameter="{Binding SelectedProfile.ModSettingsFile}" Header="Open Exported Mod Order File..." />
@@ -450,9 +635,13 @@
 									</ComboBox>
 								</StackPanel>
 								<Rectangle />
-								<TextBlock Text="Refresh" />
-								<Button x:Name="RefreshButton" ToolTip="Refresh Mods">
-									<controls:AutoGrayableImage Source="{StaticResource RefreshImage}" />
+								<Button x:Name="RefreshButton"
+									Style="{StaticResource ToolbarTextButtonStyle}"
+									ToolTip="Refresh Mods">
+									<StackPanel Orientation="Horizontal">
+										<controls:AutoGrayableImage Margin="0,0,6,0" Source="{StaticResource RefreshImage}" />
+										<TextBlock Text="Refresh" />
+									</StackPanel>
 								</Button>
 								<Rectangle />
 								<TextBlock Text="Shortcuts" />
@@ -472,8 +661,13 @@
 										</ContextMenu>
 									</Button.ContextMenu>
 								</Button>
-								<Button x:Name="OpenGameButton" ToolTip="Launch Game">
-									<controls:AutoGrayableImage Source="{StaticResource OpenGameImage}" />
+								<Button x:Name="OpenGameButton"
+									Style="{StaticResource ToolbarTextButtonStyle}"
+									ToolTip="Launch Game">
+									<StackPanel Orientation="Horizontal">
+										<controls:AutoGrayableImage Margin="0,0,6,0" Source="{StaticResource OpenGameImage}" />
+										<TextBlock Text="Launch Game" />
+									</StackPanel>
 									<Button.ContextMenu>
 										<ContextMenu>
 											<MenuItem Command="{Binding Path=OpenInFileExplorerCommand, Source={x:Static dapp:DivinityApp.Commands}}" CommandParameter="{Binding Settings.GameExecutablePath}" Header="Open Game Folder..." />
@@ -496,15 +690,21 @@
 								</Button>
 							</StackPanel>
 						</Grid>
-						<Grid Grid.Column="3" />
-					</Grid>
-					<Separator Grid.Row="1" Height="1" Background="{DynamicResource {x:Static adonisUI:Brushes.Layer3BorderBrush}}" />
+						<Grid Grid.Column="4" />
+						</Grid>
+					</Border>
+					<Separator Grid.Row="1" Height="1" Background="{DynamicResource ReduxBorderBrush}" />
 					<local:HorizontalModLayout x:Name="ModLayout" Grid.Row="2" />
 				</Grid>
-				<local:ModUpdatesLayout x:Name="ModUpdaterPanel" Grid.Row="2" Background="{DynamicResource {x:Static adonisUI:Brushes.Layer4BackgroundBrush}}" />
+				<local:ModUpdatesLayout x:Name="ModUpdaterPanel" Grid.Row="2" Background="{DynamicResource ReduxSurfaceBrush}" />
 			</Grid>
 		</xc:BusyIndicator>
-		<StatusBar Grid.Row="1" MinHeight="16">
+		<StatusBar Grid.Row="1"
+			MinHeight="16"
+			Background="{DynamicResource ReduxSurfaceElevatedBrush}"
+			BorderBrush="{DynamicResource ReduxBorderBrush}"
+			BorderThickness="0,1,0,0"
+			Foreground="{DynamicResource ReduxTextSecondaryBrush}">
 			<StatusBarItem HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
 				<controls:BusyIndicator x:Name="StatusBarBusyIndicator"
 				    Grid.Column="0"

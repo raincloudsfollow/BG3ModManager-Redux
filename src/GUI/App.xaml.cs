@@ -20,8 +20,6 @@ namespace DivinityModManager;
 /// </summary>
 public partial class App : Application
 {
-	public SplashScreen Splash { get; set; }
-
 	public App()
 	{
 		Services.RegisterSingleton<IFileWatcherService>(new FileWatcherService());
@@ -67,13 +65,7 @@ public partial class App : Application
 
 		EventManager.RegisterClassHandler(typeof(Window), Window.PreviewMouseDownEvent, new MouseButtonEventHandler(OnPreviewMouseDown));
 
-		var splashFade = new System.Threading.Thread(() =>
-		{
-			Splash.Close(TimeSpan.FromSeconds(1));
-		});
-
 		var mainWindow = new MainWindow();
-		splashFade.Start();
 		mainWindow.Show();
 	}
 

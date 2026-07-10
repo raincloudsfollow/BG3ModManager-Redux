@@ -236,6 +236,22 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		}
 	}
 
+	private DivinityModData GetSelectedModForDetails()
+	{
+		return ActiveModsListView.SelectedItems.OfType<DivinityModData>().LastOrDefault()
+			?? InactiveModsListView.SelectedItems.OfType<DivinityModData>().LastOrDefault()
+			?? ForceLoadedModsListView.SelectedItems.OfType<DivinityModData>().LastOrDefault();
+	}
+
+	private void UpdateModDetailsSelection(SelectionChangedEventArgs e)
+	{
+		var selectedMod = e?.AddedItems?.OfType<DivinityModData>().LastOrDefault()
+			?? GetSelectedModForDetails();
+
+		ModDetailsContent.Content = selectedMod;
+		ModDetailsPanel.Visibility = selectedMod != null ? Visibility.Visible : Visibility.Collapsed;
+	}
+
 	private IDisposable updatingActiveViewSelection;
 	private IDisposable updatingInactiveViewSelection;
 	private IDisposable updatingForcedViewSelection;
@@ -496,6 +512,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				.Subscribe((e) =>
 				{
 					UpdateIsSelected(e.EventArgs, ViewModel.ActiveMods);
+					UpdateModDetailsSelection(e.EventArgs);
 				}));
 
 				d(Observable.FromEventPattern<SelectionChangedEventArgs>(InactiveModsListView, "SelectionChanged")
@@ -503,6 +520,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				.Subscribe((e) =>
 				{
 					UpdateIsSelected(e.EventArgs, ViewModel.InactiveMods);
+					UpdateModDetailsSelection(e.EventArgs);
 				}));
 
 				d(Observable.FromEventPattern<SelectionChangedEventArgs>(ForceLoadedModsListView, "SelectionChanged")
@@ -510,6 +528,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				.Subscribe((e) =>
 				{
 					UpdateIsSelected(e.EventArgs, ViewModel.ForceLoadedMods);
+					UpdateModDetailsSelection(e.EventArgs);
 				}));
 
 				d(this.ViewModel.WhenAnyValue(x => x.OrderJustLoaded).ObserveOn(RxApp.MainThreadScheduler).Subscribe((b) =>
