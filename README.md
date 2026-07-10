@@ -1,74 +1,155 @@
-LaughingLeader's Baldur's Gate 3 Mod Manager
-=======
+# BG3MM Redux
 
-A mod manager for [Baldur's Gate 3](https://store.steampowered.com/app/1086940/Baldurs_Gate_3/).
+A modernized Baldur's Gate 3 mod manager focused on clarity, control, and a cleaner BG3-first modding workflow.
 
-**This is the only official source for the BG3 Mod Manager.** There is no "official website" beyond this repository.
+BG3MM Redux is a rework of the Baldur's Gate 3 Mod Manager experience. The goal is to keep the direct control and familiar BG3-focused workflow that players already value, while modernizing the interface, improving organization, and making the manager feel cleaner and more predictable to use.
 
-# Setup
+> **Project status**
+>
+> BG3MM Redux is in active development. Features, screenshots, download links, and documentation may change as the project moves toward a stable release. Back up your load orders and BG3 configuration files before testing development builds.
 
-1. Run the game once if you haven't already, so a profile and the mods folders get created.
-2. Make sure you have [.NET 8.0](https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-desktop-8.0.15-windows-x64-installer) and [the latest C++ redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe) installed.
-3. [Grab the latest release.](https://github.com/LaughingLeader/BG3ModManager/releases/latest/download/BG3ModManager_Latest.zip)
-4. The BG3 Mod Manager is portable, so extract it to a non-protected folder (don't extract it to your Program Files).
-5. Upon running `BG3ModManager.exe`, pathways to the game data and exe should be automatically detected.  
-*If this fails, manually set the pathways in Settings -> Preferences, click 'Save', then click the 'Refresh' button so the campaign mod data is loaded.*  
-![Preferences Window](/Screenshots/PreferencesWindow_GameDataPath.png?raw=true "Making sure the Game Data Path is set.")
-6. Organize your active mods for the profile `Public`, then click the first export button (Export Load Order to Game), or click File -> Export Order to Game, to export your active load order to the game. This updates the `modsettings.lsx` file that the game reads.
- [![Exporting Load Orders](https://i.imgur.com/m9IBQrj.png)](https://i.imgur.com/m9IBQrj.png)
+## What is BG3MM Redux?
 
-# Important Tips  
-* Make sure you don't have any subfolders in your mods folder (`%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods`). This causes the game to reset your `modsettings.lsx`!
-* Ensure the `Game Data Path` is set in Settings -> Preferences to the game's data folder, where all the various .pak files are (Gustav.pak etc).
-* Make sure you have a campaign selected (i.e. "Main"). The game must have a campaign exported to the `modsettings.lsx`, or it will fail to load the main menu scene / have other issues.
-* If your `modsettings.lsx` still resets when loading into the game, this means that one or more of your mods are encountering an error, and the game is clearing the load order.
+BG3MM Redux is a dedicated mod manager for **Baldur's Gate 3**.
 
-# Current Features:
+It is being built for players who want more control than the in-game Mod Manager, less overhead than a general-purpose modding platform, and a cleaner way to manage BG3-specific load orders, profiles, metadata, and mod files.
 
-* Reorganize mod load orders with a quick drag-and-drop interface. Allows reordering multiple mods at once.
-  * View details about each mod, including the description and dependencies.
-* Save your mod load orders to external json files for sharing or backing things up.
-* Export your active mod order to various text formats (i.e. a spreadsheet). These formats will include extra data, such as the mod's steam workshop url, if any.
-* Filter mods by name and properties (author, mode, etc.).
-* Export load order mods to zip files (including editor mods), for easier sharing of a playthrough's mods between friends.
-* Import load orders from save files.
-* Shortcut buttons to all the various game-related folders (mods folder, workshop folder, game directory, etc).
-* Dark and light theme support.
+Redux is based on the original BG3 Mod Manager project by **LaughingLeader** and keeps respect for the workflow that made that tool useful in the first place. This repository exists to develop the Redux version and adapt the experience around a more modern BG3 modding workflow.
 
-## Features for Mod Authors
+## Why Redux?
 
-* Extract selected mods with a few clicks. Useful for mod authors, or those wanting to study mod files for learning.
-* Copy a mod's UUID or FolderName in the right click menu. Useful for if you're setting up Ext.IsModLoaded checks with the script extender, for mod support.
-* You can specify custom tags in your project's meta.lsx (the "Tags" property"). Seperate tags with a semi-colon, and the mod manager will display them.
-* A "Version Generator" tool is available under the Tools menu, for generating the correct number for major/minor/revision/build numbers.
+BG3 has multiple ways to manage mods, but each one has tradeoffs.
 
-[![Custom Tags](https://i.imgur.com/bxkVqssl.jpg)](https://i.imgur.com/bxkVqss.png)
+- The **in-game Mod Manager** is convenient, but it requires launching the game and can make automatic changes that are frustrating when you are trying to keep a stable setup.
+- **Vortex** is useful, especially for Nexus users, but it is a broad modding platform built for many games rather than a BG3-specific workflow.
+- **Mod Organizer 2** is excellent for many games, but using it with BG3 can be awkward compared to games it was designed around.
+- The original **BG3 Mod Manager** is still the foundation many BG3 players prefer, but the experience can be modernized further.
 
-# Notes
+BG3MM Redux is meant to sit in that space: focused, direct, and built around the way BG3 players actually manage load orders.
 
-* Mod projects in the Data folder are highlighted in green. They can be used in the load order like regular mods, and even exported to zip files.
-* New profiles must be made in-game. You should also run the game at least once, so all of the game's user folders are created.
-* Highlight over mods to see their description and list of dependencies. Red dependencies are missing dependencies.
+## Current functionality
 
-# Links
+The project currently builds on the original BG3 Mod Manager feature set, including:
 
-* [Latest Release](https://github.com/LaughingLeader/BG3ModManager/releases/latest)
-* [Changelog](https://github.com/LaughingLeader/BG3ModManager/wiki/Changelog)
-* [Leader's Lair Discord](https://discord.gg/j5gp6MD)
+- Detecting BG3 game and profile paths
+- Reading installed `.pak` mods
+- Managing active and inactive mods
+- Drag-and-drop load order organization
+- Exporting the active load order to the game
+- Updating `modsettings.lsx`
+- Saving and loading external load order files
+- Importing load orders from save files
+- Viewing mod metadata, descriptions, authors, dependencies, and UUIDs
+- Exporting load order information for sharing or troubleshooting
+- Exporting selected mods to zip files
+- Opening common BG3-related folders from shortcuts
+- Light and dark theme support
+- Mod author utilities such as extraction, UUID copying, custom tags, and version generation
 
-# Support
+## Redux goals
 
-If you're feeling generous, an easy way to show support is by tipping me a coffee:
+Redux is not just a rename. The goal is to improve the full experience of managing BG3 mods.
 
-[![Tip Me a Coffee](https://i.imgur.com/NkmwXff.png)](https://ko-fi.com/LaughingLeader)
+Planned and ongoing areas of focus include:
 
-All coffee goes toward fueling future and current development efforts. Thanks!
+- A cleaner, more modern interface
+- Clearer mod organization and category support
+- Better visibility into load order state and mod metadata
+- Safer profile and load order handling
+- More predictable behavior with fewer surprise changes
+- Improved workflows around Nexus, mod.io, and manually installed mods where appropriate
+- Better guidance for new users without removing control from advanced users
+- A BG3-first workflow that avoids unnecessary clutter
 
-# Building From Source  
-## External Libraries  
-* [lslib](https://github.com/Norbyte/lslib)
+The priority is simple: **control without clutter**.
 
-# Credits
+## Download
 
-* Thanks to [Norbyte](https://github.com/Norbyte) for creating [LSLib](https://github.com/Norbyte/lslib), which allows various features of the manager (getting data from paks, reading lsb files, just to name a few).
-* [Baldur's Gate 3](https://store.steampowered.com/app/1086940/Baldurs_Gate_3/), a wonderful game from [Larian Studios](http://larian.com/)
+Redux builds will be published through this repository's **Releases** page when they are ready.
+
+- [BG3MM Redux Releases](https://github.com/raincloudsfollow/BG3ModManager-Redux/releases)
+
+Until a stable Redux release is available, assume builds are experimental. Avoid mixing multiple mod managers on the same setup unless you understand which tool is writing to your BG3 configuration.
+
+## Basic setup
+
+1. Run Baldur's Gate 3 at least once so the game creates the required profile and mod folders.
+2. Install the [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0) if it is not already installed.
+3. Install the latest [Microsoft Visual C++ Redistributable](https://aka.ms/vs/17/release/vc_redist.x64.exe).
+4. Download a Redux build from this repository's Releases page when available.
+5. Extract the application to a normal user folder. Do not extract it into `Program Files` or another protected Windows folder.
+6. Launch the mod manager.
+7. Confirm that the game data path and executable path are detected correctly. If they are not, set them manually in the preferences/settings window.
+8. Organize your active mods, then export the load order to the game.
+
+## Important notes
+
+- Back up your load order before testing new builds.
+- Avoid placing subfolders inside `%LOCALAPPDATA%\Larian Studios\Baldur's Gate 3\Mods`. BG3 expects mod `.pak` files directly in the Mods folder.
+- Make sure the game data path points to the BG3 `Data` folder.
+- If BG3 resets `modsettings.lsx`, one or more mods may be missing dependencies, outdated, incompatible, or failing to load.
+- Be careful when switching between Redux, the in-game Mod Manager, Vortex, or other tools. More than one tool can modify the same BG3 load order files.
+
+## Building from source
+
+### Requirements
+
+- Windows
+- Visual Studio 2022
+- .NET 8 SDK
+- Desktop development workloads for WPF/.NET
+- C++ build tools for native dependencies
+
+### Clone
+
+```bash
+git clone --recursive https://github.com/raincloudsfollow/BG3ModManager-Redux.git
+cd BG3ModManager-Redux
+```
+
+If the repository was cloned without submodules, initialize them with:
+
+```bash
+git submodule update --init --recursive
+```
+
+### Build
+
+Open `BG3ModManager.sln` in Visual Studio and build the solution using an x64 configuration.
+
+The solution includes the main GUI project, core mod manager logic, toolbox utilities, and external dependencies such as LSLib and CrossSpeak.
+
+## Contributing
+
+Feedback, bug reports, and contributions are welcome.
+
+When opening an issue, include as much relevant information as possible:
+
+- What you were trying to do
+- What happened instead
+- Whether the issue happens in BG3, Redux, or both
+- Your Redux version or commit
+- Your BG3 game version
+- Any relevant logs, screenshots, or error messages
+
+For pull requests, keep changes focused and explain what the change is intended to fix or improve.
+
+## Credits
+
+BG3MM Redux is based on the original **Baldur's Gate 3 Mod Manager** by [LaughingLeader](https://github.com/LaughingLeader).
+
+Additional credit and thanks to:
+
+- [Norbyte](https://github.com/Norbyte) for [LSLib](https://github.com/Norbyte/lslib)
+- LaughingLeader for CrossSpeak and the original BG3 Mod Manager foundation
+- The Baldur's Gate 3 modding community
+- BG3 mod authors, testers, tool creators, and players who continue to improve the modding ecosystem
+- [Larian Studios](https://larian.com/) for Baldur's Gate 3
+
+## Disclaimer
+
+BG3MM Redux is a community project and is not affiliated with, endorsed by, or officially supported by Larian Studios, Nexus Mods, mod.io, or Wizards of the Coast.
+
+## License
+
+This project follows the license included in this repository. See [`LICENSE`](LICENSE) for details.
