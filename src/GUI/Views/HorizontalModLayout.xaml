@@ -502,6 +502,145 @@
 					</Grid>
 				</Grid>
 			</DataTemplate>
+			<DataTemplate x:Key="ModDetailsMediaTemplate" DataType="{x:Type data:DivinityModData}">
+				<Grid Margin="18,12">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+					</Grid.RowDefinitions>
+					<Grid>
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="*" />
+							<ColumnDefinition Width="Auto" />
+						</Grid.ColumnDefinitions>
+						<TextBlock FontSize="16" FontWeight="SemiBold">
+							<TextBlock.Style>
+								<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
+									<Setter Property="Text" Value="No linked media yet" />
+									<Style.Triggers>
+										<DataTrigger Binding="{Binding NexusImageVisibility}" Value="Visible">
+											<Setter Property="Text" Value="Media from Nexus Mods" />
+										</DataTrigger>
+									</Style.Triggers>
+								</Style>
+							</TextBlock.Style>
+						</TextBlock>
+						<Button Grid.Column="1"
+							Command="{Binding Path=OpenNexusModsPageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
+							CommandParameter="{Binding}"
+							Content="View Mod on Nexus Mods"
+							Style="{StaticResource ModDetailsSourceButtonStyle}"
+							Visibility="{Binding OpenNexusModsLinkVisibility}" />
+					</Grid>
+					<TextBlock Grid.Row="1"
+						Margin="0,2,0,0"
+						Foreground="{DynamicResource ReduxTextMutedBrush}">
+						<TextBlock.Style>
+							<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
+								<Setter Property="Text" Value="Images from Nexus Mods or mod.io will appear here after an online source is linked." />
+								<Style.Triggers>
+									<DataTrigger Binding="{Binding NexusImageVisibility}" Value="Visible">
+										<Setter Property="Text" Value="The linked source image is shown without cropping." />
+									</DataTrigger>
+								</Style.Triggers>
+							</Style>
+						</TextBlock.Style>
+					</TextBlock>
+					<Border Grid.Row="2"
+						MinHeight="120"
+						Margin="0,9,0,0"
+						Padding="8"
+						Background="{DynamicResource ReduxListInteriorBrush}"
+						BorderBrush="{DynamicResource ReduxBorderBrush}"
+						BorderThickness="1"
+						CornerRadius="7">
+						<Grid>
+							<Image HorizontalAlignment="Stretch"
+								VerticalAlignment="Stretch"
+								IsHitTestVisible="False"
+								RenderOptions.BitmapScalingMode="HighQuality"
+								Source="{Binding NexusModsData.PictureUrl, Converter={StaticResource UriToBitmapImageConverter}}"
+								Stretch="Uniform"
+								Visibility="{Binding NexusImageVisibility}" />
+							<StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+								<StackPanel.Style>
+									<Style TargetType="StackPanel">
+										<Setter Property="Visibility" Value="Visible" />
+										<Style.Triggers>
+											<DataTrigger Binding="{Binding NexusImageVisibility}" Value="Visible">
+												<Setter Property="Visibility" Value="Collapsed" />
+											</DataTrigger>
+										</Style.Triggers>
+									</Style>
+								</StackPanel.Style>
+								<TextBlock HorizontalAlignment="Center" FontWeight="SemiBold" Text="No image available" />
+								<TextBlock MaxWidth="520"
+									Margin="0,5,0,0"
+									Foreground="{DynamicResource ReduxTextMutedBrush}"
+									Text="Local metadata remains available while Redux looks for a linked online source."
+									TextAlignment="Center"
+									TextWrapping="Wrap" />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Grid>
+			</DataTemplate>
+			<DataTemplate x:Key="ModDetailsRequirementsTemplate" DataType="{x:Type data:DivinityModData}">
+				<Grid Margin="18,12">
+					<Grid.RowDefinitions>
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="Auto" />
+						<RowDefinition Height="*" />
+					</Grid.RowDefinitions>
+					<TextBlock FontSize="16" FontWeight="SemiBold" Text="Installed mod dependencies" />
+					<TextBlock Grid.Row="1"
+						Margin="0,2,0,0"
+						Foreground="{DynamicResource ReduxTextMutedBrush}"
+						Text="Dependencies parsed from the installed mod package. Online requirements can be added when a source provides them." />
+					<Border Grid.Row="2"
+						Margin="0,9,0,0"
+						Padding="10"
+						Background="{DynamicResource ReduxListInteriorBrush}"
+						BorderBrush="{DynamicResource ReduxBorderBrush}"
+						BorderThickness="1"
+						CornerRadius="7">
+						<Grid>
+							<ListBox ItemTemplate="{StaticResource DependencyModTemplate}"
+								ItemsSource="{Binding DisplayedDependencies}">
+								<ListBox.Style>
+									<Style BasedOn="{StaticResource ModuleShortDescListBox}" TargetType="ListBox">
+										<Setter Property="Visibility" Value="Visible" />
+										<Style.Triggers>
+											<DataTrigger Binding="{Binding HasDependencies}" Value="False">
+												<Setter Property="Visibility" Value="Collapsed" />
+											</DataTrigger>
+										</Style.Triggers>
+									</Style>
+								</ListBox.Style>
+							</ListBox>
+							<StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+								<StackPanel.Style>
+									<Style TargetType="StackPanel">
+										<Setter Property="Visibility" Value="Collapsed" />
+										<Style.Triggers>
+											<DataTrigger Binding="{Binding HasDependencies}" Value="False">
+												<Setter Property="Visibility" Value="Visible" />
+											</DataTrigger>
+										</Style.Triggers>
+									</Style>
+								</StackPanel.Style>
+								<TextBlock HorizontalAlignment="Center" FontWeight="SemiBold" Text="No installed dependencies declared" />
+								<TextBlock Margin="0,5,0,0"
+									Foreground="{DynamicResource ReduxTextMutedBrush}"
+									Text="This mod's local metadata does not list another mod as a dependency."
+									TextAlignment="Center"
+									TextWrapping="Wrap" />
+							</StackPanel>
+						</Grid>
+					</Border>
+				</Grid>
+			</DataTemplate>
 			<DataTemplate x:Key="ModDetailsChangelogTemplate" DataType="{x:Type data:DivinityModData}">
 				<Grid Margin="18,12">
 					<Grid.RowDefinitions>
@@ -527,9 +666,9 @@
 							</TextBlock.Style>
 						</TextBlock>
 						<Button Grid.Column="1"
-							Command="{Binding Path=OpenNexusModsPageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
+							Command="{Binding Path=OpenNexusModsChangelogPageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
 							CommandParameter="{Binding}"
-							Content="Open original page"
+							Content="Open Nexus changelog page"
 							Style="{StaticResource ModDetailsSourceButtonStyle}"
 							Visibility="{Binding OpenNexusModsLinkVisibility}" />
 					</Grid>
@@ -579,29 +718,13 @@
 						<ContentControl Content="{Binding}" ContentTemplate="{StaticResource ModDetailsOverviewTemplate}" />
 					</TabItem>
 					<TabItem Header="Media">
-						<StackPanel Margin="18,22" HorizontalAlignment="Center" VerticalAlignment="Center">
-							<TextBlock HorizontalAlignment="Center" FontSize="16" FontWeight="SemiBold" Text="No linked media yet" />
-							<TextBlock MaxWidth="520"
-								Margin="0,6,0,0"
-								Foreground="{DynamicResource ReduxTextMutedBrush}"
-								Text="Images from Nexus Mods or mod.io will appear here after an online source is linked."
-								TextAlignment="Center"
-								TextWrapping="Wrap" />
-						</StackPanel>
+						<ContentControl Content="{Binding}" ContentTemplate="{StaticResource ModDetailsMediaTemplate}" />
 					</TabItem>
 					<TabItem Header="Description">
 						<ContentControl Content="{Binding}" ContentTemplate="{StaticResource ModDetailsDescriptionTemplate}" />
 					</TabItem>
 					<TabItem Header="Requirements">
-						<StackPanel Margin="18,22" HorizontalAlignment="Center" VerticalAlignment="Center">
-							<TextBlock HorizontalAlignment="Center" FontSize="16" FontWeight="SemiBold" Text="No dependency information available" />
-							<TextBlock MaxWidth="560"
-								Margin="0,6,0,0"
-								Foreground="{DynamicResource ReduxTextMutedBrush}"
-								Text="Author-supplied requirements and compatibility notes can appear here after an online source is linked."
-								TextAlignment="Center"
-								TextWrapping="Wrap" />
-						</StackPanel>
+						<ContentControl Content="{Binding}" ContentTemplate="{StaticResource ModDetailsRequirementsTemplate}" />
 					</TabItem>
 					<TabItem Header="Files">
 						<ContentControl Content="{Binding}" ContentTemplate="{StaticResource ModDetailsFilesTemplate}" />

@@ -29,6 +29,7 @@ public class DivinityGlobalCommands : ReactiveObject
 	public ReactiveCommand<DivinityModData, Unit> MoveModToActiveCommand { get; private set; }
 	public ReactiveCommand<DivinityModData, Unit> MoveModToInactiveCommand { get; private set; }
 	public ReactiveCommand<DivinityModData, Unit> OpenNexusModsPageCommand { get; private set; }
+	public ReactiveCommand<DivinityModData, Unit> OpenNexusModsChangelogPageCommand { get; private set; }
 	public ReactiveCommand<string, Unit> OpenURLCommand { get; private set; }
 	public ReactiveCommand<DivinityModData, Unit> ToggleForceAllowInLoadOrderCommand { get; private set; }
 
@@ -98,6 +99,15 @@ public class DivinityGlobalCommands : ReactiveObject
 		if (!String.IsNullOrEmpty(url))
 		{
 			ProcessHelper.TryOpenUrl(url);
+		}
+	}
+
+	public void OpenNexusModsChangelogPage(DivinityModData mod)
+	{
+		var url = mod.GetURL(ModSourceType.NEXUSMODS);
+		if (!String.IsNullOrEmpty(url))
+		{
+			ProcessHelper.TryOpenUrl($"{url}?tab=logs");
 		}
 	}
 
@@ -207,6 +217,7 @@ public class DivinityGlobalCommands : ReactiveObject
 
 		OpenURLCommand = ReactiveCommand.Create<string>(OpenURL, canExecuteViewModelCommands);
 		OpenNexusModsPageCommand = ReactiveCommand.Create<DivinityModData>(OpenNexusModsPage, canExecuteViewModelCommands);
+		OpenNexusModsChangelogPageCommand = ReactiveCommand.Create<DivinityModData>(OpenNexusModsChangelogPage, canExecuteViewModelCommands);
 		ToggleForceAllowInLoadOrderCommand = ReactiveCommand.Create<DivinityModData>(ToggleForceAllowInLoadOrder, canExecuteViewModelCommands);
 	}
 }
