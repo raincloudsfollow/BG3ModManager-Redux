@@ -26,6 +26,8 @@ public class DivinityGlobalCommands : ReactiveObject
 	public ReactiveCommand<DivinityModData, Unit> ToggleNameDisplayCommand { get; private set; }
 	public ReactiveCommand<string, Unit> CopyToClipboardCommand { get; private set; }
 	public ReactiveCommand<DivinityModData, Unit> DeleteModCommand { get; private set; }
+	public ReactiveCommand<DivinityModData, Unit> MoveModToActiveCommand { get; private set; }
+	public ReactiveCommand<DivinityModData, Unit> MoveModToInactiveCommand { get; private set; }
 	public ReactiveCommand<DivinityModData, Unit> OpenNexusModsPageCommand { get; private set; }
 	public ReactiveCommand<string, Unit> OpenURLCommand { get; private set; }
 	public ReactiveCommand<DivinityModData, Unit> ToggleForceAllowInLoadOrderCommand { get; private set; }
@@ -129,6 +131,44 @@ public class DivinityGlobalCommands : ReactiveObject
 		_viewModel.ClearMissingMods();
 	}
 
+	private void MoveModsBetweenLists(DivinityModData contextMod, bool moveToActive)
+	{
+		if (contextMod == null || _viewModel == null)
+		{
+			return;
+		}
+
+		var modsToMove = contextMod.IsSelected
+			? _viewModel.Mods.Where(mod => mod.IsSelected
+				&& mod.CanAddToLoadOrder
+				&& mod.IsActive != moveToActive).ToList()
+			: new List<DivinityModData> { contextMod };
+
+		modsToMove = modsToMove
+			.Where(mod => mod.CanAddToLoadOrder && mod.IsActive != moveToActive)
+			.ToList();
+		if (modsToMove.Count == 0)
+		{
+			return;
+		}
+
+		foreach (var mod in modsToMove)
+		{
+			if (moveToActive)
+			{
+				_viewModel.AddActiveMod(mod);
+			}
+			else
+			{
+				_viewModel.RemoveActiveMod(mod);
+			}
+		}
+
+		var targetName = moveToActive ? "active" : "inactive";
+		var modLabel = modsToMove.Count == 1 ? "mod" : "mods";
+		_viewModel.ShowAlert($"Moved {modsToMove.Count} {modLabel} to the {targetName} mods list.", AlertType.Info, 10);
+	}
+
 	public DivinityGlobalCommands()
 	{
 		var canExecuteViewModelCommands = this.WhenAnyValue(x => x.ViewModel, x => x.ViewModel.IsLocked, (vm, b) => vm != null && !b);
@@ -159,6 +199,11 @@ public class DivinityGlobalCommands : ReactiveObject
 				_viewModel.DeleteMod(mod);
 			}
 		}, canExecuteViewModelCommands);
+
+		MoveModToActiveCommand = ReactiveCommand.Create<DivinityModData>(
+			mod => MoveModsBetweenLists(mod, true), canExecuteViewModelCommands);
+		MoveModToInactiveCommand = ReactiveCommand.Create<DivinityModData>(
+			mod => MoveModsBetweenLists(mod, false), canExecuteViewModelCommands);
 
 		OpenURLCommand = ReactiveCommand.Create<string>(OpenURL, canExecuteViewModelCommands);
 		OpenNexusModsPageCommand = ReactiveCommand.Create<DivinityModData>(OpenNexusModsPage, canExecuteViewModelCommands);

@@ -324,6 +324,43 @@
 							<Setter Property="Height" Value="16" />
 						</Style>
 					</ContextMenu.Resources>
+					<MenuItem Command="{Binding Path=MoveModToActiveCommand, Source={x:Static dapp:DivinityApp.Commands}}"
+					    CommandParameter="{Binding}"
+					    Header="Move to Active Mods">
+						<MenuItem.Style>
+							<Style BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="MenuItem">
+								<Setter Property="Visibility" Value="Collapsed" />
+								<Style.Triggers>
+									<MultiDataTrigger>
+										<MultiDataTrigger.Conditions>
+											<Condition Binding="{Binding IsActive}" Value="False" />
+											<Condition Binding="{Binding CanAddToLoadOrder}" Value="True" />
+										</MultiDataTrigger.Conditions>
+										<Setter Property="Visibility" Value="Visible" />
+									</MultiDataTrigger>
+								</Style.Triggers>
+							</Style>
+						</MenuItem.Style>
+					</MenuItem>
+					<MenuItem Command="{Binding Path=MoveModToInactiveCommand, Source={x:Static dapp:DivinityApp.Commands}}"
+					    CommandParameter="{Binding}"
+					    Header="Move to Inactive Mods">
+						<MenuItem.Style>
+							<Style BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="MenuItem">
+								<Setter Property="Visibility" Value="Collapsed" />
+								<Style.Triggers>
+									<MultiDataTrigger>
+										<MultiDataTrigger.Conditions>
+											<Condition Binding="{Binding IsActive}" Value="True" />
+											<Condition Binding="{Binding CanAddToLoadOrder}" Value="True" />
+										</MultiDataTrigger.Conditions>
+										<Setter Property="Visibility" Value="Visible" />
+									</MultiDataTrigger>
+								</Style.Triggers>
+							</Style>
+						</MenuItem.Style>
+					</MenuItem>
+					<Separator />
 					<MenuItem Command="{Binding Path=OpenInFileExplorerCommand, Source={x:Static dapp:DivinityApp.Commands}}" CommandParameter="{Binding FilePath}" Header="Open in File Explorer...">
 						<MenuItem.Icon>
 							<Image Source="{StaticResource OpenFolderImage}" />
@@ -331,7 +368,7 @@
 					</MenuItem>
 					<MenuItem Command="{Binding Path=OpenNexusModsPageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
 					    CommandParameter="{Binding}"
-					    Header="Open NexusMods Page (Browser)..."
+					    Header="View Mod on Nexus Mods"
 					    IsEnabled="{Binding CanOpenNexusModsLink}"
 					    Visibility="{Binding OpenNexusModsLinkVisibility}">
 						<MenuItem.Icon>
@@ -791,9 +828,25 @@
 			<TextBlock x:Name="ModNameText"
 			    HorizontalAlignment="Stretch"
 			    Tag="{Binding}"
-			    Text="{Binding DisplayName}"
 			    ToolTip="{StaticResource ModToolTip}"
-			    ToolTipService.IsEnabled="{Binding HasToolTip}" />
+			    ToolTipService.IsEnabled="{Binding HasToolTip}">
+				<TextBlock.Style>
+					<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
+						<Setter Property="Text" Value="{Binding DisplayName}" />
+						<Style.Triggers>
+							<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
+								<Setter Property="Text" Value="{Binding NexusModsData.Name}" />
+							</DataTrigger>
+							<DataTrigger Binding="{Binding NexusModsData.Name}" Value="">
+								<Setter Property="Text" Value="{Binding DisplayName}" />
+							</DataTrigger>
+							<DataTrigger Binding="{Binding NexusModsData.Name}" Value="{x:Null}">
+								<Setter Property="Text" Value="{Binding DisplayName}" />
+							</DataTrigger>
+						</Style.Triggers>
+					</Style>
+				</TextBlock.Style>
+			</TextBlock>
 			<Border Grid.Column="1" Padding="0,0,4,0" BorderThickness="0">
 				<StackPanel Orientation="Horizontal">
 					<Image Width="16"
@@ -904,6 +957,43 @@
 			</Border>
 		</controls:ModEntryGrid>
 	</DataTemplate>
+	<DataTemplate x:Key="ModAuthorTemplate" DataType="{x:Type data:DivinityModData}">
+		<TextBlock>
+			<TextBlock.Style>
+				<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
+					<Setter Property="Text" Value="{Binding Author}" />
+					<Setter Property="ToolTip" Value="{Binding Author}" />
+					<Style.Triggers>
+						<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
+							<Setter Property="Text" Value="{Binding NexusModsData.Author}" />
+							<Setter Property="ToolTip" Value="{Binding NexusModsData.Author}" />
+						</DataTrigger>
+						<DataTrigger Binding="{Binding NexusModsData.Author}" Value="">
+							<Setter Property="Text" Value="{Binding Author}" />
+							<Setter Property="ToolTip" Value="{Binding Author}" />
+						</DataTrigger>
+						<DataTrigger Binding="{Binding NexusModsData.Author}" Value="{x:Null}">
+							<Setter Property="Text" Value="{Binding Author}" />
+							<Setter Property="ToolTip" Value="{Binding Author}" />
+						</DataTrigger>
+					</Style.Triggers>
+				</Style>
+			</TextBlock.Style>
+		</TextBlock>
+	</DataTemplate>
+	<DataTemplate x:Key="ModLastUpdatedTemplate" DataType="{x:Type data:DivinityModData}">
+		<TextBlock Text="{Binding DisplayLastUpdated, StringFormat={x:Static dapp:DivinityApp.DateTimeColumnFormat}}"
+		    ToolTip="{Binding DisplayLastUpdated, StringFormat={x:Static dapp:DivinityApp.DateTimeTooltipFormat}}" />
+	</DataTemplate>
+	<DataTemplate x:Key="ModLastModifiedTemplate" DataType="{x:Type data:DivinityModData}">
+		<TextBlock Text="{Binding LastModified, StringFormat={x:Static dapp:DivinityApp.DateTimeColumnFormat}}"
+		    ToolTip="{Binding LastModified, StringFormat={x:Static dapp:DivinityApp.DateTimeTooltipFormat}}" />
+	</DataTemplate>
+	<DataTemplate x:Key="ModSourceTemplate" DataType="{x:Type data:DivinityModData}">
+		<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+		    Text="{Binding DisplaySource}"
+		    ToolTip="{Binding DisplaySource, StringFormat='Metadata source: {0}'}" />
+	</DataTemplate>
 	<Style x:Key="GridViewLeftContainerStyle" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}" TargetType="{x:Type GridViewColumnHeader}">
 		<Setter Property="Height" Value="30" />
 		<Setter Property="Padding" Value="8,0" />
@@ -951,20 +1041,10 @@
 					</DataTemplate>
 				</GridViewColumn.CellTemplate>
 			</GridViewColumn>
-			<GridViewColumn Width="100" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
-				<GridViewColumn.CellTemplate>
-					<DataTemplate>
-						<TextBlock Text="{Binding Author}" ToolTip="{Binding Author}" />
-					</DataTemplate>
-				</GridViewColumn.CellTemplate>
-			</GridViewColumn>
-			<GridViewColumn Width="Auto" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
-				<GridViewColumn.CellTemplate>
-					<DataTemplate>
-						<TextBlock Text="{Binding LastUpdated, StringFormat={x:Static dapp:DivinityApp.DateTimeColumnFormat}}" ToolTip="{Binding LastUpdated, StringFormat={x:Static dapp:DivinityApp.DateTimeTooltipFormat}}" />
-					</DataTemplate>
-				</GridViewColumn.CellTemplate>
-			</GridViewColumn>
+			<GridViewColumn Width="100" CellTemplate="{StaticResource ModAuthorTemplate}" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastUpdatedTemplate}" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastModifiedTemplate}" Header="Last Modified" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="90" CellTemplate="{StaticResource ModSourceTemplate}" Header="Source" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
 		</GridView.Columns>
 	</GridView>
 	<Style x:Key="GridViewHiddenLeftContainerStyle" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}" TargetType="{x:Type GridViewColumnHeader}">
@@ -1000,20 +1080,10 @@
 					</DataTemplate>
 				</GridViewColumn.CellTemplate>
 			</GridViewColumn>
-			<GridViewColumn Width="100" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
-				<GridViewColumn.CellTemplate>
-					<DataTemplate>
-						<TextBlock Text="{Binding Author}" ToolTip="{Binding Author}" />
-					</DataTemplate>
-				</GridViewColumn.CellTemplate>
-			</GridViewColumn>
-			<GridViewColumn Width="Auto" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
-				<GridViewColumn.CellTemplate>
-					<DataTemplate>
-						<TextBlock Text="{Binding LastUpdated, StringFormat={x:Static dapp:DivinityApp.DateTimeColumnFormat}}" ToolTip="{Binding LastUpdated, StringFormat={x:Static dapp:DivinityApp.DateTimeTooltipFormat}}" />
-					</DataTemplate>
-				</GridViewColumn.CellTemplate>
-			</GridViewColumn>
+			<GridViewColumn Width="100" CellTemplate="{StaticResource ModAuthorTemplate}" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastUpdatedTemplate}" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastModifiedTemplate}" Header="Last Modified" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="90" CellTemplate="{StaticResource ModSourceTemplate}" Header="Source" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
 		</GridView.Columns>
 	</GridView>
 	<GridView x:Key="InactiveModGridView"
@@ -1032,20 +1102,10 @@
 					</DataTemplate>
 				</GridViewColumn.CellTemplate>
 			</GridViewColumn>
-			<GridViewColumn Width="100" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
-				<GridViewColumn.CellTemplate>
-					<DataTemplate>
-						<TextBlock Text="{Binding Author}" ToolTip="{Binding Author}" />
-					</DataTemplate>
-				</GridViewColumn.CellTemplate>
-			</GridViewColumn>
-			<GridViewColumn Width="Auto" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
-				<GridViewColumn.CellTemplate>
-					<DataTemplate>
-						<TextBlock Text="{Binding LastUpdated, StringFormat={x:Static dapp:DivinityApp.DateTimeColumnFormat}}" ToolTip="{Binding LastUpdated, StringFormat={x:Static dapp:DivinityApp.DateTimeTooltipFormat}}" />
-					</DataTemplate>
-				</GridViewColumn.CellTemplate>
-			</GridViewColumn>
+			<GridViewColumn Width="100" CellTemplate="{StaticResource ModAuthorTemplate}" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastUpdatedTemplate}" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastModifiedTemplate}" Header="Last Modified" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="90" CellTemplate="{StaticResource ModSourceTemplate}" Header="Source" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
 		</GridView.Columns>
 	</GridView>
 

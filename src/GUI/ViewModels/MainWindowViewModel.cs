@@ -1055,6 +1055,10 @@ Directory the zip will be extracted to:
 
 		Settings.WhenAnyValue(x => x.NexusModsAPIKey).Subscribe((key) =>
 		{
+			UpdateHandler.Nexus.APIKey = key;
+			UpdateHandler.Nexus.AppName = AppTitle;
+			UpdateHandler.Nexus.AppVersion = Version.ToString();
+
 			if (String.IsNullOrEmpty(key))
 			{
 				NexusModsDataLoader.Dispose();
@@ -1150,6 +1154,8 @@ Directory the zip will be extracted to:
 				mod.NexusModsEnabled = DivinityApp.NexusModsEnabled;
 			}
 		}
+
+		UpdateHandler.Nexus.IsEnabled = DivinityApp.NexusModsEnabled;
 
 		if (Settings.LogEnabled)
 		{
@@ -1902,7 +1908,16 @@ Directory the zip will be extracted to:
 
 				if (UpdateHandler.Nexus.IsEnabled && result.Mods.Count > 0 && result.Mods.Any(x => x.NexusModsData.ModId >= DivinityApp.NEXUSMODS_MOD_ID_START))
 				{
-					await UpdateHandler.Nexus.Update(result.Mods, MainProgressToken.Token);
+					var cacheChanged = await UpdateHandler.Nexus.Update(result.Mods, MainProgressToken.Token);
+					cacheChanged |= await NexusModsDataLoader.LoadChangelogsAsync(result.Mods, MainProgressToken.Token);
+					if (cacheChanged)
+					{
+						foreach (var mod in result.Mods.Where(mod => mod.NexusModsData.ModId >= DivinityApp.NEXUSMODS_MOD_ID_START))
+						{
+							UpdateHandler.Nexus.CacheData.Mods[mod.UUID] = mod.NexusModsData;
+						}
+						await UpdateHandler.Nexus.SaveCacheAsync(false, Version.ToString(), MainProgressToken.Token);
+					}
 				}
 
 				await ctrl.Yield();
@@ -2280,6 +2295,82 @@ Directory the zip will be extracted to:
 		});
 	}
 
+	private void LoadNexusModsMetadataBackground()
+	{
+		if (!UpdateHandler.Nexus.IsEnabled || IsRefreshingModUpdates)
+		{
+			return;
+		}
+
+		var loadedUserMods = UserMods.ToList();
+		IsRefreshingModUpdates = true;
+
+		RxApp.TaskpoolScheduler.ScheduleAsync(async (scheduler, cancellationToken) =>
+		{
+			try
+			{
+				var cacheChanged = false;
+				var cachedData = await UpdateHandler.Nexus.LoadCacheAsync(Version.ToString(), cancellationToken);
+				if (cachedData != null)
+				{
+					UpdateHandler.Nexus.CacheData = cachedData;
+					await Observable.Start(() =>
+					{
+						foreach (var mod in loadedUserMods)
+						{
+							if (cachedData.Mods.TryGetValue(mod.UUID, out var nexusData))
+							{
+								mod.NexusModsData.Update(nexusData);
+							}
+						}
+					}, RxApp.MainThreadScheduler);
+				}
+
+				var missingMetadata = loadedUserMods
+					.Where(mod => mod.NexusModsData.ModId >= DivinityApp.NEXUSMODS_MOD_ID_START
+						&& (String.IsNullOrWhiteSpace(mod.NexusModsData.Name)
+							|| !mod.NexusModsData.DescriptionLoaded))
+					.ToList();
+
+				if (!String.IsNullOrWhiteSpace(Settings.NexusModsAPIKey)
+					&& missingMetadata.Count > 0
+					&& await UpdateHandler.Nexus.Update(missingMetadata, cancellationToken))
+				{
+					cacheChanged = true;
+				}
+
+				var missingChangelogs = loadedUserMods
+					.Where(mod => mod.NexusModsData.ModId >= DivinityApp.NEXUSMODS_MOD_ID_START
+						&& !mod.NexusModsData.ChangelogsLoaded)
+					.ToList();
+
+				if (!String.IsNullOrWhiteSpace(Settings.NexusModsAPIKey)
+					&& missingChangelogs.Count > 0
+					&& await NexusModsDataLoader.LoadChangelogsAsync(missingChangelogs, cancellationToken))
+				{
+					foreach (var mod in missingChangelogs)
+					{
+						UpdateHandler.Nexus.CacheData.Mods[mod.UUID] = mod.NexusModsData;
+					}
+					cacheChanged = true;
+				}
+
+				if (cacheChanged)
+				{
+					await UpdateHandler.Nexus.SaveCacheAsync(false, Version.ToString(), cancellationToken);
+				}
+			}
+			catch (Exception ex)
+			{
+				DivinityApp.Log($"Error loading Nexus Mods metadata:\n{ex}");
+			}
+			finally
+			{
+				RxApp.MainThreadScheduler.Schedule(() => IsRefreshingModUpdates = false);
+			}
+		});
+	}
+
 	private async Task CheckForEmptyOrderAsync(IScheduler sch, CancellationToken token)
 	{
 		if (SelectedProfile == null) return;
@@ -2531,6 +2622,7 @@ Directory the zip will be extracted to:
 			IsRefreshing = false;
 			IsLoadingOrder = false;
 			IsInitialized = true;
+			LoadNexusModsMetadataBackground();
 
 			if (AppSettings.FeatureEnabled("ScriptExtender"))
 			{
@@ -3082,7 +3174,16 @@ Directory the zip will be extracted to:
 				await ImportArchiveAsync(builtinMods, result, dialog.FileName, false, MainProgressToken.Token);
 				if (result.Mods.Count > 0 && result.Mods.Any(x => x.NexusModsData.ModId >= DivinityApp.NEXUSMODS_MOD_ID_START))
 				{
-					await UpdateHandler.Nexus.Update(result.Mods, MainProgressToken.Token);
+					var cacheChanged = await UpdateHandler.Nexus.Update(result.Mods, MainProgressToken.Token);
+					cacheChanged |= await NexusModsDataLoader.LoadChangelogsAsync(result.Mods, MainProgressToken.Token);
+					if (cacheChanged)
+					{
+						foreach (var mod in result.Mods.Where(mod => mod.NexusModsData.ModId >= DivinityApp.NEXUSMODS_MOD_ID_START))
+						{
+							UpdateHandler.Nexus.CacheData.Mods[mod.UUID] = mod.NexusModsData;
+						}
+						await UpdateHandler.Nexus.SaveCacheAsync(false, Version.ToString(), MainProgressToken.Token);
+					}
 				}
 				await ctrl.Yield(t);
 				RxApp.MainThreadScheduler.Schedule(_ =>
@@ -3318,6 +3419,10 @@ Directory the zip will be extracted to:
 									taskResult.TotalPaks++;
 									taskResult.Mods.Add(mod);
 									mod.NexusModsData.SetModVersion(info);
+									if (info.Success)
+									{
+										UpdateHandler.Nexus.CacheData.Mods[mod.UUID] = mod.NexusModsData;
+									}
 									await Observable.Start(() =>
 									{
 										AddImportedMod(mod, toActiveList);
@@ -3446,6 +3551,10 @@ Directory the zip will be extracted to:
 									{
 										taskResult.Mods.Add(mod);
 										mod.NexusModsData.SetModVersion(info);
+										if (info.Success)
+										{
+											UpdateHandler.Nexus.CacheData.Mods[mod.UUID] = mod.NexusModsData;
+										}
 										await Observable.Start(() =>
 										{
 											AddImportedMod(mod, toActiveList);

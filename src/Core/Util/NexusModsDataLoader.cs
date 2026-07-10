@@ -124,7 +124,9 @@ public static class NexusModsDataLoader
 				OnTaskDone();
 				return links;
 			}
-			using var dataLoader = new InfosInquirer(_client);
+			// InfosInquirer.Dispose also disposes the shared API client. The loader owns
+			// that client lifetime, so keep the inquirer alive for this request only.
+			var dataLoader = new InfosInquirer(_client);
 			foreach (var mod in mods)
 			{
 				if (mod.NexusModsData.ModId >= DivinityApp.NEXUSMODS_MOD_ID_START)
@@ -203,7 +205,9 @@ public static class NexusModsDataLoader
 
 			DivinityApp.Log($"Using NexusMods API to update {total} mods");
 
-			using var dataLoader = new InfosInquirer(_client);
+			// InfosInquirer.Dispose also disposes the shared API client. The loader owns
+			// that client lifetime, so a following changelog request can reuse it safely.
+			var dataLoader = new InfosInquirer(_client);
 			foreach (var mod in targetMods)
 			{
 				var result = await dataLoader.Mods.GetMod(DivinityApp.NEXUSMODS_GAME_DOMAIN, mod.NexusModsData.ModId, t);
@@ -225,5 +229,61 @@ public static class NexusModsDataLoader
 		OnTaskDone();
 
 		return taskResult;
+	}
+
+	public static async Task<bool> LoadChangelogsAsync(IEnumerable<DivinityModData> mods, CancellationToken t)
+	{
+		if (!CanFetchData)
+		{
+			return false;
+		}
+
+		var targetMods = mods
+			.Where(mod => mod.NexusModsData.ModId >= DivinityApp.NEXUSMODS_MOD_ID_START
+				&& !mod.NexusModsData.ChangelogsLoaded)
+			.ToList();
+		if (targetMods.Count == 0)
+		{
+			return false;
+		}
+
+		_isActive = true;
+		var totalLoaded = 0;
+		try
+		{
+			if (!CanDoTask(targetMods.Count))
+			{
+				var apiAmounts = _client.RateLimitsManagement.APILimits;
+				DivinityApp.Log($"Changelog task would exceed hourly or daily Nexus Mods API limits. ExpectedCalls({targetMods.Count}) HourlyRemaining({apiAmounts.HourlyRemaining}/{apiAmounts.HourlyLimit}) DailyRemaining({apiAmounts.DailyRemaining}/{apiAmounts.DailyLimit})");
+				return false;
+			}
+
+			DivinityApp.Log($"Using Nexus Mods API to load changelogs for {targetMods.Count} mod(s)");
+			var dataLoader = new InfosInquirer(_client);
+			foreach (var mod in targetMods)
+			{
+				if (t.IsCancellationRequested)
+				{
+					break;
+				}
+
+				try
+				{
+					var result = await dataLoader.Mods.GetModChangelogs(DivinityApp.NEXUSMODS_GAME_DOMAIN, mod.NexusModsData.ModId, t);
+					mod.NexusModsData.SetChangelogs(result ?? new Dictionary<string, IEnumerable<string>>());
+					totalLoaded++;
+				}
+				catch (Exception ex)
+				{
+					DivinityApp.Log($"Error fetching Nexus Mods changelog for mod ID {mod.NexusModsData.ModId}:\n{ex}");
+				}
+			}
+		}
+		finally
+		{
+			OnTaskDone();
+		}
+
+		return totalLoaded > 0;
 	}
 }

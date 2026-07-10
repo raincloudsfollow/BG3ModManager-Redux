@@ -59,7 +59,7 @@ public partial class AlertBar : UserControl
 				spOutline.Visibility = Visibility.Collapsed;
 
 				grdParent = FindVisualChildren<Grid>(spStandard).FirstOrDefault();
-				grdParent.Background = bg;
+				bdrStandard.BorderBrush = bg;
 				break;
 			case ThemeType.Outline:
 			default:
@@ -159,7 +159,7 @@ public partial class AlertBar : UserControl
 	{
 		_syncContext.Post(o =>
 		{
-			string color = "#D9534F";
+			string color = "#D95D6A";
 			TransformStage(message, timeoutInSeconds, color, (BitmapImage)this.Resources["AlertBar_Danger"]);
 		}, null);
 	}
@@ -173,7 +173,7 @@ public partial class AlertBar : UserControl
 	{
 		_syncContext.Post(o =>
 		{
-			string color = "#F0AD4E";
+			string color = "#D7A24B";
 			TransformStage(message, timeoutInSeconds, color, (BitmapImage)this.Resources["AlertBar_Warning"]);
 		}, null);
 	}
@@ -187,7 +187,7 @@ public partial class AlertBar : UserControl
 	{
 		_syncContext.Post(o =>
 		{
-			string color = "#5CB85C";
+			string color = "#3FA37A";
 			TransformStage(message, timeoutInSeconds, color, (BitmapImage)this.Resources["AlertBar_Success"]);
 		}, null);
 	}
@@ -202,7 +202,7 @@ public partial class AlertBar : UserControl
 	{
 		_syncContext.Post(o =>
 		{
-			string color = "#5BC0DE";
+			string color = "#8A6AF1";
 			TransformStage(message, timeoutInSeconds, color, (BitmapImage)this.Resources["AlertBar_Information"]);
 		}, null);
 	}

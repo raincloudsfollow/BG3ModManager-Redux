@@ -27,7 +27,9 @@ public class DivinityModManagerSettings : ReactiveObject
 	[DataMember, Reactive] public bool LaunchDX11 { get; set; }
 
 	[DefaultValue("")]
-	[SettingsEntry("NexusMods API Key", "Your personal NexusMods API key, which will allow the mod manager to fetch mod updates/information", HideFromUI = true)]
+	// REDUX RELEASE BLOCKER: Before public release, register with Nexus Mods, obtain an SSO application slug,
+	// replace the personal API key testing flow with browser SSO, and re-review API usage/rate limits.
+	[SettingsEntry("Nexus Mods API Key", "Personal API key used to retrieve Nexus Mods metadata and updates. This testing build stores the key locally in Data/settings.json. You can revoke the key from your Nexus Mods account at any time.")]
 	[DataMember, Reactive] public string NexusModsAPIKey { get; set; }
 
 	[DefaultValue(false)]
@@ -82,6 +84,23 @@ public class DivinityModManagerSettings : ReactiveObject
 
 	[DefaultValue(true)]
 	[DataMember, Reactive] public bool DarkThemeEnabled { get; set; }
+
+	// Redux mod-list column choices. These are managed from the column-header
+	// context menu, so they stay out of the main Settings window.
+	[DefaultValue(true)]
+	[DataMember, Reactive] public bool ShowModListVersionColumn { get; set; }
+
+	[DefaultValue(true)]
+	[DataMember, Reactive] public bool ShowModListAuthorColumn { get; set; }
+
+	[DefaultValue(true)]
+	[DataMember, Reactive] public bool ShowModListLastUpdatedColumn { get; set; }
+
+	[DefaultValue(true)]
+	[DataMember, Reactive] public bool ShowModListLastModifiedColumn { get; set; }
+
+	[DefaultValue(true)]
+	[DataMember, Reactive] public bool ShowModListSourceColumn { get; set; }
 
 	[DefaultValue(true)]
 	[SettingsEntry("Shift Focus on Swap", "When moving selected mods to the opposite list with Enter, move focus to that list as well")]

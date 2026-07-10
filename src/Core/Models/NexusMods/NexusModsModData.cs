@@ -5,6 +5,7 @@ using NexusModsNET.DataModels;
 
 using System.ComponentModel;
 using System.Reflection;
+using System.Text;
 
 namespace DivinityModManager.Models.NexusMods;
 
@@ -35,8 +36,60 @@ public class NexusModsModData : INotifyPropertyChanged
 	[JsonProperty("summary")]
 	public string Summary { get; set; }
 
-	//[JsonProperty("description")]
-	//public string Description { get; set; }
+	[JsonProperty("description")]
+	public string Description { get; set; }
+
+	[JsonProperty("description_loaded")]
+	public bool DescriptionLoaded { get; set; }
+
+	private Dictionary<string, List<string>> _changelogs = new();
+
+	[JsonProperty("changelogs")]
+	public Dictionary<string, List<string>> Changelogs
+	{
+		get => _changelogs;
+		set
+		{
+			_changelogs = value ?? new Dictionary<string, List<string>>();
+			RaisePropertyChanged(nameof(Changelogs));
+			RaisePropertyChanged(nameof(ChangelogText));
+		}
+	}
+
+	[JsonProperty("changelogs_loaded")]
+	public bool ChangelogsLoaded { get; set; }
+
+	[JsonIgnore]
+	public string ChangelogText
+	{
+		get
+		{
+			if (Changelogs == null || Changelogs.Count == 0)
+			{
+				return String.Empty;
+			}
+
+			var text = new StringBuilder();
+			foreach (var changelog in Changelogs)
+			{
+				if (text.Length > 0)
+				{
+					text.AppendLine();
+				}
+
+				text.Append("Version ").AppendLine(changelog.Key);
+				foreach (var entry in changelog.Value ?? Enumerable.Empty<string>())
+				{
+					if (!String.IsNullOrWhiteSpace(entry))
+					{
+						text.Append("\u2022 ").AppendLine(entry.Trim());
+					}
+				}
+			}
+
+			return text.ToString().Trim();
+		}
+	}
 
 	[JsonProperty("picture_url")]
 	public Uri PictureUrl { get; set; }
@@ -100,6 +153,16 @@ public class NexusModsModData : INotifyPropertyChanged
 		}
 	}
 
+	public void SetChangelogs(Dictionary<string, IEnumerable<string>> changelogs)
+	{
+		Changelogs = changelogs?.ToDictionary(
+			entry => entry.Key,
+			entry => entry.Value?.Where(value => !String.IsNullOrWhiteSpace(value)).ToList() ?? new List<string>())
+			?? new Dictionary<string, List<string>>();
+		ChangelogsLoaded = true;
+		RaisePropertyChanged(nameof(ChangelogsLoaded));
+	}
+
 	private static readonly IEnumerable<PropertyInfo> _lazySerializedProperties = typeof(NexusModsModData)
 		.GetProperties(BindingFlags.Public | BindingFlags.Instance)
 		.Where(prop => prop.GetCustomAttribute<JsonPropertyAttribute>(true) != null);
@@ -135,6 +198,8 @@ public class NexusModsModData : INotifyPropertyChanged
 				}
 			}
 		}
+		DescriptionLoaded = true;
+		RaisePropertyChanged(nameof(DescriptionLoaded));
 		IsUpdated = true;
 		RaisePropertyChanged(nameof(IsUpdated));
 	}

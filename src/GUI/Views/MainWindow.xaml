@@ -21,7 +21,7 @@
     Width="1600"
     Height="800"
     d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel}"
-    TitleBarBackground="{DynamicResource ReduxSurfaceElevatedBrush}"
+    TitleBarBackground="{DynamicResource ReduxWindowBrush}"
     TitleBarForeground="{DynamicResource ReduxTextPrimaryBrush}"
     mc:Ignorable="d">
 	<Window.Style>
@@ -56,5 +56,22 @@
 	<Window.TaskbarItemInfo>
 		<TaskbarItemInfo />
 	</Window.TaskbarItemInfo>
-	<Grid x:Name="MainGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+	<Grid x:Name="MainGrid" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+		<Border x:Name="WindowResizeGlow"
+			Margin="1"
+			Panel.ZIndex="1000"
+			Background="Transparent"
+			BorderBrush="{DynamicResource ReduxAccentHoverBrush}"
+			BorderThickness="2"
+			CornerRadius="6"
+			IsHitTestVisible="False"
+			Opacity="0">
+			<Border.Effect>
+				<DropShadowEffect BlurRadius="10"
+					Color="{DynamicResource ReduxAccentHoverColor}"
+					Opacity="0.75"
+					ShadowDepth="0" />
+			</Border.Effect>
+		</Border>
+	</Grid>
 </adonisControls:AdonisWindow>

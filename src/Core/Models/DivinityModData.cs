@@ -202,6 +202,8 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 	[ObservableAsProperty] public string OsirisStatusToolTipText { get; }
 	[ObservableAsProperty] public string LastModifiedDateText { get; }
 	[ObservableAsProperty] public string DisplayVersion { get; }
+	[ObservableAsProperty] public DateTime? DisplayLastUpdated { get; }
+	[ObservableAsProperty] public string DisplaySource { get; }
 
 	[ObservableAsProperty] public Visibility DependencyVisibility { get; }
 	[ObservableAsProperty] public Visibility ConflictsVisibility { get; }
@@ -412,6 +414,10 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 			.Select(DateUtils.UnixTimeStampToDateTime)
 			.ToUIProperty(this, x => x.NexusModsUpdatedDate);
 
+		this.WhenAnyValue(x => x.NexusModsData.UpdatedTimestamp, x => x.LastUpdated)
+			.Select(x => x.Item1 > 0 ? (DateTime?)DateUtils.UnixTimeStampToDateTime(x.Item1) : x.Item2)
+			.ToUIProperty(this, x => x.DisplayLastUpdated);
+
 		this.WhenAnyValue(x => x.NexusModsCreatedDate, x => x.NexusModsUpdatedDate, x => x.NexusModsData.EndorsementCount)
 			.Select(x => NexusModsInfoToTooltip(x.Item1, x.Item2, x.Item3))
 			.ToUIProperty(this, x => x.NexusModsTooltipInfo);
@@ -426,6 +432,12 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 		this.WhenAnyValue(x => x.CanOpenNexusModsLink)
 			.Select(b => b ? Visibility.Visible : Visibility.Collapsed)
 			.ToUIProperty(this, x => x.OpenNexusModsLinkVisibility, Visibility.Collapsed);
+
+		// This is presentation metadata only. mod.io will join this resolver when
+		// its provider is added; it does not affect the installed mod or load order.
+		this.WhenAnyValue(x => x.CanOpenNexusModsLink)
+			.Select(isNexusLinked => isNexusLinked ? "Nexus Mods" : "Local")
+			.ToUIProperty(this, x => x.DisplaySource, "Local");
 
 		var depConn = Dependencies.Connect().ObserveOn(RxApp.MainThreadScheduler);
 		depConn.SortAndBind(out displayedDependencies, _moduleSort).DisposeMany().Subscribe();

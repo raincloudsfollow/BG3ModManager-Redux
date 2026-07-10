@@ -701,7 +701,7 @@
 		</xc:BusyIndicator>
 		<StatusBar Grid.Row="1"
 			MinHeight="16"
-			Background="{DynamicResource ReduxSurfaceElevatedBrush}"
+			Background="{DynamicResource ReduxWindowBrush}"
 			BorderBrush="{DynamicResource ReduxBorderBrush}"
 			BorderThickness="0,1,0,0"
 			Foreground="{DynamicResource ReduxTextSecondaryBrush}">

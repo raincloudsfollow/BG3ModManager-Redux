@@ -18,6 +18,7 @@ using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
+using System.Windows.Media.Animation;
 
 using WpfScreenHelper;
 
@@ -189,6 +190,7 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainWindowViewModel>, I
 	}
 
 	private static IDisposable _saveWindowPositionTask = null;
+	private IDisposable _resizeGlowFadeTask = null;
 
 	private void SaveWindowSettings()
 	{
@@ -200,6 +202,30 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainWindowViewModel>, I
 	{
 		_saveWindowPositionTask?.Dispose();
 		_saveWindowPositionTask = RxApp.MainThreadScheduler.Schedule(TimeSpan.FromMilliseconds(500), SaveWindowSettings);
+	}
+
+	private void OnWindowResizeFeedback(object sender, SizeChangedEventArgs e)
+	{
+		if (!IsLoaded || WindowState == WindowState.Maximized)
+		{
+			WindowResizeGlow.Opacity = 0;
+			return;
+		}
+
+		WindowResizeGlow.BeginAnimation(OpacityProperty, null);
+		WindowResizeGlow.Opacity = 0.9;
+		_resizeGlowFadeTask?.Dispose();
+		_resizeGlowFadeTask = RxApp.MainThreadScheduler.Schedule(TimeSpan.FromMilliseconds(220), () =>
+		{
+			var fade = new DoubleAnimation
+			{
+				From = WindowResizeGlow.Opacity,
+				To = 0,
+				Duration = TimeSpan.FromMilliseconds(180),
+				FillBehavior = FillBehavior.HoldEnd
+			};
+			WindowResizeGlow.BeginAnimation(OpacityProperty, fade);
+		});
 	}
 
 	public void ApplyWindowPosition(WindowSettings win)
@@ -367,6 +393,7 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainWindowViewModel>, I
 	public MainWindow()
 	{
 		InitializeComponent();
+		SizeChanged += OnWindowResizeFeedback;
 		self = this;
 
 		_logsDir = DivinityApp.GetAppDirectory("_Logs");

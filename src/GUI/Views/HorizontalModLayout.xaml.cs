@@ -13,6 +13,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -38,7 +39,22 @@ public class HorizontalModLayoutBase : ReactiveUserControl<MainWindowViewModel> 
 /// </summary>
 public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayout
 {
+	private const double DefaultModDetailsRowHeight = 295;
+	private const double MinimumExpandedModDetailsRowHeight = 295;
+	private const double CollapsedModDetailsRowHeight = 58;
+	private const double ModDetailsSplitterHeight = 6;
+
 	private object _focusedList = null;
+	private double _lastExpandedModDetailsRowHeight = DefaultModDetailsRowHeight;
+	private readonly Dictionary<GridViewColumn, double> _visibleModListColumnWidths = new();
+	private static readonly string[] OptionalModListColumns =
+	[
+		"Version",
+		"Author",
+		"Last Updated",
+		"Last Modified",
+		"Source"
+	];
 
 	public ModListView ActiveModsView => ActiveModsListView;
 	public ModListView InactiveModsView => InactiveModsListView;
@@ -248,8 +264,64 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		var selectedMod = e?.AddedItems?.OfType<DivinityModData>().LastOrDefault()
 			?? GetSelectedModForDetails();
 
+		if (selectedMod == null)
+		{
+			RememberExpandedModDetailsHeight();
+		}
+
 		ModDetailsContent.Content = selectedMod;
 		ModDetailsPanel.Visibility = selectedMod != null ? Visibility.Visible : Visibility.Collapsed;
+		UpdateModDetailsLayout(selectedMod != null);
+	}
+
+	private void RememberExpandedModDetailsHeight()
+	{
+		if (ModDetailsToggleButton.IsChecked == true && ModDetailsRow.ActualHeight >= MinimumExpandedModDetailsRowHeight)
+		{
+			_lastExpandedModDetailsRowHeight = ModDetailsRow.ActualHeight;
+		}
+	}
+
+	private void UpdateModDetailsLayout(bool hasSelectedMod)
+	{
+		if (!hasSelectedMod)
+		{
+			ModDetailsGridSplitter.Visibility = Visibility.Collapsed;
+			ModDetailsSplitterRow.Height = new GridLength(0);
+			ModDetailsRow.MinHeight = 0;
+			ModDetailsRow.Height = new GridLength(0);
+			return;
+		}
+
+		if (ModDetailsToggleButton.IsChecked == false)
+		{
+			ModDetailsGridSplitter.Visibility = Visibility.Collapsed;
+			ModDetailsSplitterRow.Height = new GridLength(0);
+			ModDetailsRow.MinHeight = CollapsedModDetailsRowHeight;
+			ModDetailsRow.Height = new GridLength(CollapsedModDetailsRowHeight);
+			return;
+		}
+
+		ModDetailsGridSplitter.Visibility = Visibility.Visible;
+		ModDetailsSplitterRow.Height = new GridLength(ModDetailsSplitterHeight);
+		ModDetailsRow.MinHeight = MinimumExpandedModDetailsRowHeight;
+		ModDetailsRow.Height = new GridLength(Math.Max(MinimumExpandedModDetailsRowHeight, _lastExpandedModDetailsRowHeight));
+	}
+
+	private void ModDetailsToggleButton_Checked(object sender, RoutedEventArgs e)
+	{
+		UpdateModDetailsLayout(ModDetailsPanel.Visibility == Visibility.Visible);
+	}
+
+	private void ModDetailsToggleButton_Unchecked(object sender, RoutedEventArgs e)
+	{
+		RememberExpandedModDetailsHeight();
+		UpdateModDetailsLayout(ModDetailsPanel.Visibility == Visibility.Visible);
+	}
+
+	private void ModDetailsGridSplitter_DragCompleted(object sender, DragCompletedEventArgs e)
+	{
+		Dispatcher.BeginInvoke(new Action(RememberExpandedModDetailsHeight));
 	}
 
 	private IDisposable updatingActiveViewSelection;
@@ -477,6 +549,11 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 	public HorizontalModLayout()
 	{
 		InitializeComponent();
+		CaptureModListColumnWidths();
+
+		ModDetailsToggleButton.Checked += ModDetailsToggleButton_Checked;
+		ModDetailsToggleButton.Unchecked += ModDetailsToggleButton_Unchecked;
+		ModDetailsGridSplitter.DragCompleted += ModDetailsGridSplitter_DragCompleted;
 
 		SetupListView(ActiveModsListView);
 		SetupListView(InactiveModsListView);
@@ -541,6 +618,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				}));
 
 				ViewModel.Layout = this;
+				ApplyModListColumnVisibility();
 
 				d(this.OneWayBind(ViewModel, vm => vm.ActiveMods, v => v.ActiveModsListView.ItemsSource));
 				d(this.OneWayBind(ViewModel, vm => vm.InactiveMods, v => v.InactiveModsListView.ItemsSource));
@@ -718,6 +796,223 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		}
 	}
 
+	private IEnumerable<GridView> GetModListGridViews()
+	{
+		if (ActiveModsListView.View is GridView activeView)
+		{
+			yield return activeView;
+		}
+		if (ForceLoadedModsListView.View is GridView forceLoadedView)
+		{
+			yield return forceLoadedView;
+		}
+		if (InactiveModsListView.View is GridView inactiveView)
+		{
+			yield return inactiveView;
+		}
+	}
+
+	private static string GetColumnName(GridViewColumn column)
+	{
+		return column.Header switch
+		{
+			TextBlock textBlock => textBlock.Text,
+			string header => header,
+			_ => String.Empty
+		};
+	}
+
+	private void CaptureModListColumnWidths()
+	{
+		foreach (var gridView in GetModListGridViews())
+		{
+			foreach (var column in gridView.Columns)
+			{
+				if (!_visibleModListColumnWidths.ContainsKey(column))
+				{
+					_visibleModListColumnWidths[column] = column.Width;
+				}
+			}
+		}
+	}
+
+	private bool IsModListColumnVisible(string columnName)
+	{
+		if (ViewModel?.Settings == null)
+		{
+			return true;
+		}
+
+		return columnName switch
+		{
+			"Version" => ViewModel.Settings.ShowModListVersionColumn,
+			"Author" => ViewModel.Settings.ShowModListAuthorColumn,
+			"Last Updated" => ViewModel.Settings.ShowModListLastUpdatedColumn,
+			"Last Modified" => ViewModel.Settings.ShowModListLastModifiedColumn,
+			"Source" => ViewModel.Settings.ShowModListSourceColumn,
+			_ => true
+		};
+	}
+
+	private void SetModListColumnSetting(string columnName, bool isVisible)
+	{
+		if (ViewModel?.Settings == null)
+		{
+			return;
+		}
+
+		switch (columnName)
+		{
+			case "Version":
+				ViewModel.Settings.ShowModListVersionColumn = isVisible;
+				break;
+			case "Author":
+				ViewModel.Settings.ShowModListAuthorColumn = isVisible;
+				break;
+			case "Last Updated":
+				ViewModel.Settings.ShowModListLastUpdatedColumn = isVisible;
+				break;
+			case "Last Modified":
+				ViewModel.Settings.ShowModListLastModifiedColumn = isVisible;
+				break;
+			case "Source":
+				ViewModel.Settings.ShowModListSourceColumn = isVisible;
+				break;
+		}
+	}
+
+	private static double GetDefaultColumnWidth(string columnName)
+	{
+		return columnName switch
+		{
+			"Version" => 80,
+			"Author" => 100,
+			"Last Updated" => 100,
+			"Last Modified" => 100,
+			"Source" => 90,
+			_ => 100
+		};
+	}
+
+	private void SetGridViewColumnVisibility(GridView gridView, string columnName, bool isVisible)
+	{
+		var column = gridView.Columns.FirstOrDefault(candidate => GetColumnName(candidate) == columnName);
+		if (column == null)
+		{
+			return;
+		}
+
+		if (isVisible)
+		{
+			if (column.Width == 0)
+			{
+				column.Width = _visibleModListColumnWidths.TryGetValue(column, out var storedWidth)
+					? storedWidth
+					: GetDefaultColumnWidth(columnName);
+			}
+		}
+		else
+		{
+			if (column.Width != 0)
+			{
+				_visibleModListColumnWidths[column] = column.Width;
+				column.Width = 0;
+			}
+		}
+	}
+
+	private void ApplyModListColumnVisibility()
+	{
+		CaptureModListColumnWidths();
+		foreach (var gridView in GetModListGridViews())
+		{
+			foreach (var columnName in OptionalModListColumns)
+			{
+				SetGridViewColumnVisibility(gridView, columnName, IsModListColumnVisible(columnName));
+			}
+		}
+	}
+
+	private static MenuItem CreateFixedColumnMenuItem(string header)
+	{
+		return new MenuItem
+		{
+			Header = header,
+			IsCheckable = true,
+			IsChecked = true,
+			IsEnabled = false
+		};
+	}
+
+	private void ListViewColumnHeader_RightClick(object sender, MouseButtonEventArgs e)
+	{
+		if (sender is not ModListView listView || e.OriginalSource is not UIElement clickedElement)
+		{
+			return;
+		}
+
+		// The routed event is attached to the ListView, so row and empty-space clicks
+		// also reach this handler. Only open the chooser for a real column header.
+		var clickedHeader = clickedElement as GridViewColumnHeader
+			?? clickedElement.FindVisualParent<GridViewColumnHeader>();
+		if (clickedHeader == null)
+		{
+			return;
+		}
+
+		var menu = new ContextMenu
+		{
+			Placement = PlacementMode.MousePoint,
+			PlacementTarget = listView
+		};
+		menu.Items.Add(new MenuItem
+		{
+			Header = "Visible Columns",
+			FontWeight = FontWeights.SemiBold,
+			IsEnabled = false
+		});
+		menu.Items.Add(new Separator());
+
+		if (ReferenceEquals(listView, ActiveModsListView))
+		{
+			menu.Items.Add(CreateFixedColumnMenuItem("#  (load order — always shown)"));
+		}
+		menu.Items.Add(CreateFixedColumnMenuItem("Name  (always shown)"));
+
+		foreach (var columnName in OptionalModListColumns)
+		{
+			var item = new MenuItem
+			{
+				Header = columnName,
+				IsCheckable = true,
+				IsChecked = IsModListColumnVisible(columnName)
+			};
+			item.Click += (_, _) =>
+			{
+				SetModListColumnSetting(columnName, item.IsChecked);
+				ApplyModListColumnVisibility();
+				ViewModel.QueueSave();
+			};
+			menu.Items.Add(item);
+		}
+
+		menu.Items.Add(new Separator());
+		var resetItem = new MenuItem { Header = "Reset Columns" };
+		resetItem.Click += (_, _) =>
+		{
+			foreach (var columnName in OptionalModListColumns)
+			{
+				SetModListColumnSetting(columnName, true);
+			}
+			ApplyModListColumnVisibility();
+			ViewModel.QueueSave();
+		};
+		menu.Items.Add(resetItem);
+
+		menu.IsOpen = true;
+		e.Handled = true;
+	}
+
 	GridViewColumnHeader _lastHeaderClicked = null;
 	ListSortDirection _lastDirection = ListSortDirection.Ascending;
 
@@ -774,7 +1069,9 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		if (sortBy == "#") sortBy = "Index";
 		if (sortBy == "Name") sortBy = "DisplayName";
 		if (sortBy == "Modes") sortBy = "Targets";
-		if (sortBy == "Last Updated") sortBy = "LastUpdated";
+		if (sortBy == "Last Updated") sortBy = "DisplayLastUpdated";
+		if (sortBy == "Last Modified") sortBy = "LastModified";
+		if (sortBy == "Source") sortBy = "DisplaySource";
 
 		try
 		{
