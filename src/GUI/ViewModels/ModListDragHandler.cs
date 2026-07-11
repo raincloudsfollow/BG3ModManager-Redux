@@ -112,6 +112,14 @@ public class ModListDragHandler : DefaultDragHandler
 		{
 			return false;
 		}
+		if (_viewModel.IsActiveListMetadataSorted &&
+			(ReferenceEquals(dragInfo.SourceCollection, _viewModel.DisplayActiveMods) ||
+			 ReferenceEquals(dragInfo.SourceCollection, _viewModel.ActiveMods)))
+		{
+			// A row index in a sorted ICollectionView is not a real load-order index.
+			// Keep sorting view-only by allowing reordering only in the # view.
+			return false;
+		}
 		if (dragInfo.Data is ISelectable d && !d.CanDrag)
 		{
 			return false;

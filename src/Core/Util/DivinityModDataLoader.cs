@@ -1333,9 +1333,12 @@ public static partial class DivinityModDataLoader
 		if (Directory.Exists(folder))
 		{
 			string outputFilePath = Path.Combine(folder, "modsettings.lsx");
+			string backupFilePath = outputFilePath + ".bak";
 			string contents = GenerateModSettingsFile(order);
 			try
 			{
+				if (String.IsNullOrWhiteSpace(contents))
+					throw new InvalidDataException("Generated modsettings.lsx content was empty.");
 				//Lazy indentation!
 				var xml = new XmlDocument();
 				xml.LoadXml(contents);
@@ -1346,8 +1349,12 @@ public static partial class DivinityModDataLoader
 				xml.WriteTo(xw);
 
 				var buffer = Encoding.UTF8.GetBytes(sw.ToString());
-				using var fs = new FileStream(outputFilePath, FileMode.Create, FileAccess.Write, FileShare.None, buffer.Length, true);
-				await fs.WriteAsync(buffer);
+				await AtomicFileWriter.WriteAllBytesAsync(outputFilePath, buffer, backupFilePath, temporaryPath =>
+				{
+					var validationDocument = new XmlDocument();
+					validationDocument.Load(temporaryPath);
+					return validationDocument.DocumentElement != null;
+				});
 
 				return true;
 			}

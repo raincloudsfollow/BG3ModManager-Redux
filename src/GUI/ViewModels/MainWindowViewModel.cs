@@ -260,6 +260,8 @@ public class MainWindowViewModel : BaseHistoryViewModel, IActivatableViewModel, 
 	[Reactive] public bool IsLoadingOrder { get; set; }
 	[Reactive] public bool OrderJustLoaded { get; set; }
 	[Reactive] public bool IsDragging { get; set; }
+	/// <summary>True when Active Mods is displayed in a metadata-sorted view rather than the real # load order.</summary>
+	[Reactive] public bool IsActiveListMetadataSorted { get; set; }
 	[Reactive] public bool AppSettingsLoaded { get; set; }
 	[Reactive] public bool IsRefreshing { get; private set; }
 	[Reactive] public bool IsRefreshingModUpdates { get; private set; }
@@ -1285,15 +1287,35 @@ Directory the zip will be extracted to:
 	public bool SaveSettings()
 	{
 		string settingsFile = DivinityApp.GetAppDirectory("Data", "settings.json");
+		string backupFile = settingsFile + ".bak";
 
 		try
 		{
 #if DEBUG
 			DivinityApp.Log($"Saving settings to '{settingsFile}'");
 #endif
-			Directory.CreateDirectory(Path.GetDirectoryName(settingsFile));
 			string contents = JsonConvert.SerializeObject(Settings, Formatting.Indented, _managerSerializerSettings);
-			File.WriteAllText(settingsFile, contents);
+			var backupForReplace = backupFile;
+			if (File.Exists(settingsFile))
+			{
+				try
+				{
+					var existingContents = File.ReadAllText(settingsFile);
+					if (JsonConvert.DeserializeObject<DivinityModManagerSettings>(existingContents, _managerSerializerSettings) == null)
+						backupForReplace = null;
+				}
+				catch (Exception ex)
+				{
+					// Do not replace a previous known-good .bak with an already-corrupt live file.
+					backupForReplace = null;
+					DivinityApp.Log($"Existing settings file is not valid and will not replace '{backupFile}': {ex}");
+				}
+			}
+			AtomicFileWriter.WriteAllText(settingsFile, contents, backupForReplace, temporaryPath =>
+			{
+				var temporaryContents = File.ReadAllText(temporaryPath);
+				return JsonConvert.DeserializeObject<DivinityModManagerSettings>(temporaryContents, _managerSerializerSettings) != null;
+			});
 			Settings.CanSaveSettings = false;
 			if (!Keys.SaveKeybindings(out var errorMsg))
 			{
@@ -1877,39 +1899,124 @@ Directory the zip will be extracted to:
 		IsLoadingOrder = false;
 	}
 
+	private string CreatePakImportTemporaryPath(string finalPath)
+	{
+		var directory = Path.GetDirectoryName(finalPath);
+		var name = Path.GetFileNameWithoutExtension(finalPath);
+		// Keep staged imports from looking like installed mods to BG3 or BG3MM scanners.
+		return Path.Combine(directory, $".{name}.redux-import-{Guid.NewGuid():N}.pak.tmp");
+	}
+
+	private string GetUniqueModBackupPath(string originalPath)
+	{
+		var recoveryDirectory = Path.Combine(PathwayData.AppDataGameFolder, "Mods_Old_ModManager");
+		Directory.CreateDirectory(recoveryDirectory);
+		var candidate = Path.Combine(recoveryDirectory, Path.GetFileName(originalPath));
+		if (!File.Exists(candidate)) return candidate;
+
+		var name = Path.GetFileNameWithoutExtension(originalPath);
+		var extension = Path.GetExtension(originalPath);
+		var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+		candidate = Path.Combine(recoveryDirectory, $"{name}_{timestamp}{extension}");
+		var suffix = 1;
+		while (File.Exists(candidate))
+		{
+			candidate = Path.Combine(recoveryDirectory, $"{name}_{timestamp}_{suffix++}{extension}");
+		}
+		return candidate;
+	}
+
+	private string BackupExistingPak(string finalPath)
+	{
+		if (!File.Exists(finalPath)) return null;
+		var backupPath = GetUniqueModBackupPath(finalPath);
+		try
+		{
+			File.Copy(finalPath, backupPath, false);
+		}
+		catch (Exception ex)
+		{
+			throw new IOException($"Could not create recovery backup '{backupPath}'. The installed mod was left unchanged.", ex);
+		}
+		DivinityApp.Log($"Backed up existing mod '{finalPath}' to '{backupPath}'.");
+		return backupPath;
+	}
+
+	private async Task<DivinityModData> ValidateAndCommitImportedPakAsync(string temporaryPath, string finalPath,
+		Dictionary<string, DivinityModData> builtinMods, CancellationToken cancellationToken)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+		var mod = await DivinityModDataLoader.LoadModDataFromPakAsync(temporaryPath, builtinMods, cancellationToken);
+		if (mod == null)
+			throw new InvalidDataException($"The imported package '{Path.GetFileName(finalPath)}' could not be validated.");
+
+		cancellationToken.ThrowIfCancellationRequested();
+		BackupExistingPak(finalPath);
+		if (File.Exists(finalPath))
+			File.Replace(temporaryPath, finalPath, null, true);
+		else
+			File.Move(temporaryPath, finalPath);
+
+		mod.FilePath = finalPath;
+		DivinityApp.Log($"Committed validated mod package to '{finalPath}'.");
+		return mod;
+	}
+
+	private static void CleanupPakImportTemporaryFile(string temporaryPath)
+	{
+		try
+		{
+			if (!String.IsNullOrWhiteSpace(temporaryPath) && File.Exists(temporaryPath)) File.Delete(temporaryPath);
+		}
+		catch (Exception ex)
+		{
+			DivinityApp.Log($"Could not remove partial mod import '{temporaryPath}': {ex}");
+		}
+	}
+
 	private async Task<ImportOperationResults> AddModFromFile(Dictionary<string, DivinityModData> builtinMods, ImportOperationResults taskResult, string filePath, CancellationToken cts, bool? toActiveList = null)
 	{
 		var ext = Path.GetExtension(filePath).ToLower();
 		if (ext.Equals(".pak", StringComparison.OrdinalIgnoreCase))
 		{
 			var outputFilePath = Path.Combine(PathwayData.AppDataModsPath, Path.GetFileName(filePath));
+			string temporaryPath = null;
 			try
 			{
 				taskResult.TotalPaks++;
-
-				if (await DivinityFileUtils.CopyFileAsync(filePath, outputFilePath, cts))
+				DivinityModData mod;
+				if (Path.GetFullPath(filePath).Equals(Path.GetFullPath(outputFilePath), StringComparison.OrdinalIgnoreCase))
 				{
-					var mod = await DivinityModDataLoader.LoadModDataFromPakAsync(outputFilePath, builtinMods, cts);
-					if (mod != null)
-					{
-						taskResult.Mods.Add(mod);
-						await Observable.Start(() =>
-						{
-							AddImportedMod(mod, toActiveList);
-							return Unit.Default;
-						}, RxApp.MainThreadScheduler);
-					}
+					mod = await DivinityModDataLoader.LoadModDataFromPakAsync(outputFilePath, builtinMods, cts);
 				}
-			}
+				else
+				{
+					temporaryPath = CreatePakImportTemporaryPath(outputFilePath);
+					if (!await DivinityFileUtils.CopyFileAsync(filePath, temporaryPath, cts))
+						throw new IOException($"Copying '{filePath}' to a temporary import file failed.");
+					mod = await ValidateAndCommitImportedPakAsync(temporaryPath, outputFilePath, builtinMods, cts);
+				}
+
+				if (mod == null) throw new InvalidDataException($"The package '{filePath}' could not be validated.");
+				taskResult.Mods.Add(mod);
+				await Observable.Start(() =>
+				{
+					AddImportedMod(mod, toActiveList);
+					return Unit.Default;
+				}, RxApp.MainThreadScheduler);
+				}
 			catch (IOException ex)
 			{
 				DivinityApp.Log($"File may be in use by another process:\n{ex}");
-				ShowAlert($"Failed to copy file '{Path.GetFileName(filePath)} - It may be locked by another process'", AlertType.Danger);
+				ShowAlert($"Failed to safely import '{Path.GetFileName(filePath)}': {ex.Message}", AlertType.Danger);
+				taskResult.AddError(filePath, ex);
 			}
 			catch (Exception ex)
 			{
 				DivinityApp.Log($"Error reading file ({filePath}):\n{ex}");
+				taskResult.AddError(filePath, ex);
 			}
+			finally { CleanupPakImportTemporaryFile(temporaryPath); }
 		}
 		else if (_archiveFormats.Contains(ext, StringComparer.OrdinalIgnoreCase))
 		{
@@ -3136,7 +3243,10 @@ Directory the zip will be extracted to:
 			var finalOrder = DivinityModDataLoader.BuildOutputList(SelectedModOrder.Order, mods.Items, Settings.AutoAddDependenciesWhenExporting, outputAdventureMod);
 			var result = await DivinityModDataLoader.ExportModSettingsToFileAsync(SelectedProfile.Folder, finalOrder);
 
-			await BackupCurrentLoadOrderAsync();
+			if (result)
+			{
+				await BackupCurrentLoadOrderAsync();
+			}
 
 			var dir = GetLarianStudiosAppDataFolder();
 			if (SelectedModOrder.Order.Count > 0)
@@ -3492,11 +3602,32 @@ Directory the zip will be extracted to:
 
 						tempFile = await TempFile.CreateAsync(filePath, decompressionStream, cts);
 
+						var temporaryPath = CreatePakImportTemporaryPath(outputFilePath);
 						try
 						{
-							var mod = await DivinityModDataLoader.LoadModDataFromPakAsync(outputFilePath, builtinMods, cts, tempFile.Stream);
+							tempFile.Stream.Position = 0;
+							using (var fs = File.Create(temporaryPath, 4096, System.IO.FileOptions.Asynchronous))
+							{
+								await tempFile.Stream.CopyToAsync(fs, 4096, cts);
+							}
+
+							var mod = await DivinityModDataLoader.LoadModDataFromPakAsync(temporaryPath, builtinMods, cts);
 							if (mod != null)
 							{
+								if (!outputName.Contains(mod.Name))
+								{
+									var nameFromMeta = $"{mod.Folder}.pak";
+									outputFilePath = Path.Combine(outputDirectory, nameFromMeta);
+								}
+
+								cts.ThrowIfCancellationRequested();
+								BackupExistingPak(outputFilePath);
+								if (File.Exists(outputFilePath))
+									File.Replace(temporaryPath, outputFilePath, null, true);
+								else
+									File.Move(temporaryPath, outputFilePath);
+								mod.FilePath = outputFilePath;
+
 								try
 								{
 									mod.LastModified = File.GetLastWriteTime(filePath);
@@ -3504,50 +3635,29 @@ Directory the zip will be extracted to:
 								}
 								catch (Exception ex)
 								{
-									DivinityApp.Log($"Error getting pak last modified date for '{ex}': {ex}");
+									DivinityApp.Log($"Error getting pak last modified date for '{filePath}': {ex}");
 								}
 
-								if (!outputName.Contains(mod.Name))
+								success = true;
+								taskResult.TotalPaks++;
+								taskResult.Mods.Add(mod);
+								mod.NexusModsData.SetModVersion(info);
+								if (info.Success)
 								{
-									var nameFromMeta = $"{mod.Folder}.pak";
-									outputFilePath = Path.Combine(outputDirectory, nameFromMeta);
-									mod.FilePath = outputFilePath;
+									UpdateHandler.Nexus.CacheData.Mods[mod.UUID] = mod.NexusModsData;
 								}
-								using (var fs = File.Create(outputFilePath, 4096, System.IO.FileOptions.Asynchronous))
+								await Observable.Start(() =>
 								{
-									try
-									{
-										await decompressionStream.CopyToAsync(fs, 4096, cts);
-										success = true;
-									}
-									catch (Exception ex)
-									{
-										taskResult.AddError(outputFilePath, ex);
-										DivinityApp.Log($"Error copying file '{outputName}' from archive to '{outputFilePath}':\n{ex}");
-									}
-								}
-
-								if (success)
-								{
-									taskResult.TotalPaks++;
-									taskResult.Mods.Add(mod);
-									mod.NexusModsData.SetModVersion(info);
-									if (info.Success)
-									{
-										UpdateHandler.Nexus.CacheData.Mods[mod.UUID] = mod.NexusModsData;
-									}
-									await Observable.Start(() =>
-									{
-										AddImportedMod(mod, toActiveList);
-										return Unit.Default;
-									}, RxApp.MainThreadScheduler);
-								}
+									AddImportedMod(mod, toActiveList);
+									return Unit.Default;
+								}, RxApp.MainThreadScheduler);
 							}
 						}
 						catch (Exception ex)
 						{
 							DivinityApp.Log($"Error reading decompressed file '{filePath}' as pak:\n{ex}");
 						}
+						finally { CleanupPakImportTemporaryFile(temporaryPath); }
 					}
 				}
 				catch (Exception ex)
@@ -3641,40 +3751,36 @@ Directory the zip will be extracted to:
 							{
 								var outputName = Path.GetFileName(file.Key);
 								var outputFilePath = Path.Combine(outputDirectory, outputName);
+								var temporaryPath = CreatePakImportTemporaryPath(outputFilePath);
 								taskResult.TotalPaks++;
-								using (var entryStream = file.OpenEntryStream())
+								try
 								{
-									using var fs = File.Create(outputFilePath, 4096, System.IO.FileOptions.Asynchronous);
-									try
+									using (var entryStream = file.OpenEntryStream())
+									using (var fs = File.Create(temporaryPath, 4096, System.IO.FileOptions.Asynchronous))
 									{
 										await entryStream.CopyToAsync(fs, 4096, cts);
-										success = true;
 									}
-									catch (Exception ex)
-									{
-										taskResult.AddError(outputFilePath, ex);
-										DivinityApp.Log($"Error copying file '{file.Key}' from archive to '{outputFilePath}':\n{ex}");
-									}
-								}
 
-								if (success)
-								{
-									var mod = await DivinityModDataLoader.LoadModDataFromPakAsync(outputFilePath, builtinMods, cts);
-									if (mod != null)
+									var mod = await ValidateAndCommitImportedPakAsync(temporaryPath, outputFilePath, builtinMods, cts);
+									success = true;
+									taskResult.Mods.Add(mod);
+									mod.NexusModsData.SetModVersion(info);
+									if (info.Success)
 									{
-										taskResult.Mods.Add(mod);
-										mod.NexusModsData.SetModVersion(info);
-										if (info.Success)
-										{
-											UpdateHandler.Nexus.CacheData.Mods[mod.UUID] = mod.NexusModsData;
-										}
-										await Observable.Start(() =>
-										{
-											AddImportedMod(mod, toActiveList);
-											return Unit.Default;
-										}, RxApp.MainThreadScheduler);
+										UpdateHandler.Nexus.CacheData.Mods[mod.UUID] = mod.NexusModsData;
 									}
+									await Observable.Start(() =>
+									{
+										AddImportedMod(mod, toActiveList);
+										return Unit.Default;
+									}, RxApp.MainThreadScheduler);
 								}
+								catch (Exception ex)
+								{
+									taskResult.AddError(outputFilePath, ex);
+									DivinityApp.Log($"Error staging or validating '{file.Key}' from archive for '{outputFilePath}':\n{ex}");
+								}
+								finally { CleanupPakImportTemporaryFile(temporaryPath); }
 							}
 							else if (file.Key.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
 							{

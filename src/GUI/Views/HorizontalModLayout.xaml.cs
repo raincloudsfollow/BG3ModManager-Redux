@@ -1517,6 +1517,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				// separator rows in their saved visual slots instead of sorting those
 				// non-mod rows by a synthetic Index value.
 				dataView.Filter = null;
+				if (lv == ActiveModsListView && ViewModel != null) ViewModel.IsActiveListMetadataSorted = false;
 				ViewModel?.RefreshVisualDividers();
 				dataView.Refresh();
 				return;
@@ -1528,6 +1529,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 			// load order are not modified.
 			if (lv == ActiveModsListView || lv == InactiveModsListView)
 			{
+				if (lv == ActiveModsListView && ViewModel != null) ViewModel.IsActiveListMetadataSorted = true;
 				foreach (var mod in lv.ItemsSource.OfType<DivinityModData>().Where(item => !item.IsVisualDivider))
 					mod.IsHiddenByVisualDivider = false;
 				dataView.Filter = item => item is not DivinityModData mod || !mod.IsVisualDivider;

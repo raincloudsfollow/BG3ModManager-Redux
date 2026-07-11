@@ -84,6 +84,20 @@ public class ModUpdatesViewData : ReactiveObject
 		return files;
 	}
 
+	private static string GetUniqueBackupPath(string backupFolder, string sourcePath)
+	{
+		var candidate = Path.Combine(backupFolder, Path.GetFileName(sourcePath));
+		if (!File.Exists(candidate)) return candidate;
+		var name = Path.GetFileNameWithoutExtension(sourcePath);
+		var extension = Path.GetExtension(sourcePath);
+		var timestamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+		candidate = Path.Combine(backupFolder, $"{name}_{timestamp}{extension}");
+		var suffix = 1;
+		while (File.Exists(candidate))
+			candidate = Path.Combine(backupFolder, $"{name}_{timestamp}_{suffix++}{extension}");
+		return candidate;
+	}
+
 	private void CopySelectedMods_Run()
 	{
 		string documentsFolder = _mainWindowViewModel.PathwayData.AppDataGameFolder;
@@ -166,6 +180,8 @@ public class ModUpdatesViewData : ReactiveObject
 		if (e.Argument is CopyModUpdatesTask args)
 		{
 			var totalWork = args.NewFilesToMove.Count + args.UpdatesToMove.Count;
+			string backupFolder = Path.Combine(_mainWindowViewModel.PathwayData.AppDataGameFolder, "Mods_Old_ModManager");
+			Directory.CreateDirectory(backupFolder);
 			if (args.NewFilesToMove.Count > 0)
 			{
 				DivinityApp.Log($"Copying '{args.NewFilesToMove.Count}' new mod(s) to the local mods folder.");
@@ -177,7 +193,14 @@ public class ModUpdatesViewData : ReactiveObject
 					dialog.ReportProgress(args.TotalMoved / totalWork, $"Copying '{fileName}'...", null);
 					try
 					{
-						File.Copy(file, Path.Combine(args.ModPakFolder, fileName), true);
+						var destinationPath = Path.Combine(args.ModPakFolder, fileName);
+						if (File.Exists(destinationPath))
+						{
+							var backupPath = GetUniqueBackupPath(backupFolder, destinationPath);
+							File.Copy(destinationPath, backupPath, false);
+							DivinityApp.Log($"Backed up installed mod '{destinationPath}' to '{backupPath}'.");
+						}
+						File.Copy(file, destinationPath, true);
 					}
 					catch (Exception ex)
 					{
@@ -192,8 +215,6 @@ public class ModUpdatesViewData : ReactiveObject
 
 			if (args.UpdatesToMove.Count > 0)
 			{
-				string backupFolder = Path.Combine(_mainWindowViewModel.PathwayData.AppDataGameFolder, "Mods_Old_ModManager");
-				Directory.CreateDirectory(backupFolder);
 				DivinityApp.Log($"Copying '{args.UpdatesToMove.Count}' mod update(s) to the local mods folder.");
 				foreach (string file in args.UpdatesToMove)
 				{
@@ -201,12 +222,22 @@ public class ModUpdatesViewData : ReactiveObject
 					string baseName = Path.GetFileName(file);
 					try
 					{
+						var destinationPath = Path.Combine(args.ModPakFolder, baseName);
+						if (File.Exists(destinationPath))
+						{
+							var backupPath = GetUniqueBackupPath(backupFolder, destinationPath);
+							File.Copy(destinationPath, backupPath, false);
+							DivinityApp.Log($"Backed up installed mod '{destinationPath}' to '{backupPath}'.");
+						}
 						DivinityApp.Log($"Moving mod into mods folder: '{file}'.");
-						File.Copy(file, Path.Combine(args.ModPakFolder, Path.GetFileName(file)), true);
+						File.Copy(file, destinationPath, true);
 					}
 					catch (Exception ex)
 					{
-						DivinityApp.Log($"Error copying mod:\n{ex}");
+						var message = $"Could not back up and update '{baseName}'. The installed mod was left unchanged.\n{ex}";
+						DivinityApp.Log(message);
+						MainWindow.Self.AlertBar.SetDangerAlert(message);
+						dialog.ReportProgress(args.TotalMoved / totalWork, message, null);
 					}
 					dialog.ReportProgress(args.TotalMoved / totalWork, $"Copying '{baseName}'...", null);
 					args.TotalMoved++;
