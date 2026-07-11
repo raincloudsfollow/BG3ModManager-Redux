@@ -3,6 +3,7 @@
 
 
 using DivinityModManager.Converters;
+using DivinityModManager.Models;
 using DivinityModManager.Models.App;
 using DivinityModManager.Util;
 using DivinityModManager.Util.ScreenReader;
@@ -190,10 +191,10 @@ public partial class MainViewControl : MainViewControlViewBase
 		return new CachedAutomationPeer(this);
 	}
 
-	public void UpdateColorTheme(bool darkMode)
+	public void UpdateColorTheme(ReduxThemeType theme)
 	{
-		ResourceLocator.SetColorScheme(this.Resources, !darkMode ? DivinityApp.LightTheme : DivinityApp.DarkTheme);
-		main.UpdateColorTheme(darkMode);
+		ResourceLocator.SetColorScheme(this.Resources, DivinityApp.GetThemeUri(theme));
+		main.UpdateColorTheme(theme);
 	}
 
 	private void ComboBox_KeyDown_LoseFocus(object sender, KeyEventArgs e)

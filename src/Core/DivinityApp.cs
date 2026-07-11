@@ -76,6 +76,14 @@ public static class DivinityApp
 
 	public static readonly Uri LightTheme = new("pack://application:,,,/BG3ModManager;component/Themes/Light.xaml", UriKind.Absolute);
 	public static readonly Uri DarkTheme = new("pack://application:,,,/BG3ModManager;component/Themes/Dark.xaml", UriKind.Absolute);
+	public static readonly Uri ParchmentTheme = new("pack://application:,,,/BG3ModManager;component/Themes/Parchment.xaml", UriKind.Absolute);
+
+	public static Uri GetThemeUri(ReduxThemeType theme) => theme switch
+	{
+		ReduxThemeType.ReduxLight => LightTheme,
+		ReduxThemeType.Parchment => ParchmentTheme,
+		_ => DarkTheme
+	};
 
 	public static SourceCache<DivinityModData, string> IgnoredMods { get; } = new(x => x.UUID);
 	public static HashSet<string> IgnoredDependencyMods { get; } = [];

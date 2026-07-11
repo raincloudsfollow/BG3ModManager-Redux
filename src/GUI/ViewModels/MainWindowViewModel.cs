@@ -1045,9 +1045,12 @@ Directory the zip will be extracted to:
 
 		Settings.WhenAnyValue(x => x.LogEnabled).Subscribe(Window.ToggleLogging);
 
-		Settings.WhenAnyValue(x => x.DarkThemeEnabled).Skip(1).ObserveOn(RxApp.MainThreadScheduler).Subscribe((b) =>
+		Settings.WhenAnyValue(x => x.ColorTheme).ObserveOn(RxApp.MainThreadScheduler).Subscribe((theme) =>
 		{
-			View.UpdateColorTheme(b);
+			// Retain the original boolean for compatibility with older BG3MM/Redux settings.
+			Settings.DarkThemeEnabled = theme == ReduxThemeType.ReduxDark;
+			View.UpdateColorTheme(theme);
+			ScheduleRefreshModCategories();
 			if (IsInitialized) SaveSettings();
 		});
 
@@ -4732,6 +4735,11 @@ Directory the zip will be extracted to:
 
 	private string GetCategoryColor(string category)
 	{
+		if (category.Equals(AllModsCategory, StringComparison.OrdinalIgnoreCase) &&
+			View?.TryFindResource("ReduxAccentHoverColor") is System.Windows.Media.Color themeHover)
+		{
+			return $"#{themeHover.R:X2}{themeHover.G:X2}{themeHover.B:X2}";
+		}
 		if (Settings.ModCategoryColors.TryGetValue(category, out var color) &&
 			Regex.IsMatch(color ?? String.Empty, "^#[0-9A-Fa-f]{6}$")) return color.ToUpperInvariant();
 		return ReduxCategoryDefaultColors.TryGetValue(category, out var defaultColor) ? defaultColor : "#8F879E";
@@ -5089,6 +5097,7 @@ Directory the zip will be extracted to:
 			.GroupBy(mod => mod.UUID, StringComparer.OrdinalIgnoreCase)
 			.Select(group => group.First())
 			.ToList();
+		RefreshSourceComponentAssociations(allMods);
 		foreach (var mod in allMods)
 		{
 			var categories = GetEffectiveModCategories(mod);
@@ -5172,6 +5181,58 @@ Directory the zip will be extracted to:
 
 		OnFilterTextChanged(ActiveModFilterText, ActiveMods);
 		OnFilterTextChanged(InactiveModFilterText, InactiveMods);
+	}
+
+	/// <summary>
+	/// Associates independently installed packages that point to the same online
+	/// project. This is display-only: package UUIDs, list membership, load-order
+	/// positions, and export behavior remain independent.
+	/// </summary>
+	private static void RefreshSourceComponentAssociations(IReadOnlyCollection<DivinityModData> mods)
+	{
+		foreach (var mod in mods)
+		{
+			mod.SourceComponentCount = 1;
+			mod.SourceComponentSummary = null;
+			mod.SourceComponentTooltip = null;
+			mod.SourceComponentVisibility = Visibility.Collapsed;
+		}
+
+		var sourceGroups = mods
+			.Select(mod => new
+			{
+				Mod = mod,
+				Key = mod.Metadata.SourceType switch
+				{
+					ModSourceType.NEXUSMODS when mod.NexusModsData?.ModId >= DivinityApp.NEXUSMODS_MOD_ID_START
+						=> $"nexus:{mod.NexusModsData.ModId}",
+					ModSourceType.MODIO when mod.ModioData?.ModId > 0
+						=> $"modio:{mod.ModioData.ModId}",
+					_ => null
+				}
+			})
+			.Where(item => item.Key != null)
+			.GroupBy(item => item.Key, StringComparer.OrdinalIgnoreCase)
+			.Where(group => group.Count() > 1);
+
+		foreach (var group in sourceGroups)
+		{
+			var linkedPackages = group.Select(item => item.Mod).ToList();
+			foreach (var mod in linkedPackages)
+			{
+				var sourceLabel = mod.Metadata.SourceLabel;
+				var fileIdentity = mod.Metadata.SourceType == ModSourceType.NEXUSMODS && mod.NexusModsData.LastFileId > 0
+					? $" This package is linked to Nexus file ID {mod.NexusModsData.LastFileId}."
+					: " The exact downloadable file is not known for this package.";
+
+				mod.SourceComponentCount = linkedPackages.Count;
+				mod.SourceComponentSummary = $"{linkedPackages.Count} linked packages";
+				mod.SourceComponentTooltip =
+					$"{linkedPackages.Count} independently installed packages point to this {sourceLabel} page.{fileIdentity} " +
+					"Each package remains a separate mod and load-order entry.";
+				mod.SourceComponentVisibility = Visibility.Visible;
+			}
+		}
 	}
 
 	private readonly MainWindowExceptionHandler exceptionHandler;
@@ -5892,7 +5953,12 @@ Directory the zip will be extracted to:
 
 		Keys.ToggleViewTheme.AddAction(() =>
 		{
-			Settings.DarkThemeEnabled = !Settings.DarkThemeEnabled;
+			Settings.ColorTheme = Settings.ColorTheme switch
+			{
+				ReduxThemeType.ReduxDark => ReduxThemeType.ReduxLight,
+				ReduxThemeType.ReduxLight => ReduxThemeType.Parchment,
+				_ => ReduxThemeType.ReduxDark
+			};
 		});
 
 		Keys.ToggleFileNameDisplay.AddAction(() =>

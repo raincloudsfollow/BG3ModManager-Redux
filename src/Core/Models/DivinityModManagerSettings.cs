@@ -13,6 +13,16 @@ using System.Windows;
 
 namespace DivinityModManager.Models;
 
+public enum ReduxThemeType
+{
+	[Description("Redux Dark")]
+	ReduxDark = 1,
+	[Description("Redux Light")]
+	ReduxLight = 2,
+	[Description("Parchment")]
+	Parchment = 3
+}
+
 [DataContract]
 public class DivinityModManagerSettings : ReactiveObject
 {
@@ -99,10 +109,17 @@ public class DivinityModManagerSettings : ReactiveObject
 	[DefaultValue(true)]
 	[DataMember, Reactive] public bool DarkThemeEnabled { get; set; }
 
+	[DefaultValue(ReduxThemeType.ReduxDark)]
+	[SettingsEntry("Theme", "Choose the Redux color palette. Themes change colors only; layout, typography, icons, and behavior remain shared.", HideFromUI = true)]
+	[DataMember, Reactive] public ReduxThemeType ColorTheme { get; set; } = ReduxThemeType.ReduxDark;
+
 	// Redux mod-list column choices. These are managed from the column-header
 	// context menu, so they stay out of the main Settings window.
 	[DefaultValue(true)]
 	[DataMember, Reactive] public bool ShowModListVersionColumn { get; set; }
+
+	[DefaultValue(true)]
+	[DataMember, Reactive] public bool ShowModListFileNameColumn { get; set; }
 
 	[DefaultValue(true)]
 	[DataMember, Reactive] public bool ShowModListAuthorColumn { get; set; }
@@ -234,9 +251,21 @@ public class DivinityModManagerSettings : ReactiveObject
 	[Newtonsoft.Json.JsonExtensionData]
 	private IDictionary<string, object> AdditionalFields { get; set; } = new Dictionary<string, object>();
 
+	[OnDeserializing]
+	private void OnDeserializing(StreamingContext context)
+	{
+		// A zero value marks settings written before Redux added the three-theme selector.
+		ColorTheme = 0;
+	}
+
 	[OnDeserialized]
 	private void OnDeserialized(StreamingContext context)
 	{
+		if (!Enum.IsDefined(ColorTheme) || ColorTheme == 0)
+		{
+			ColorTheme = DarkThemeEnabled ? ReduxThemeType.ReduxDark : ReduxThemeType.ReduxLight;
+		}
+		DarkThemeEnabled = ColorTheme == ReduxThemeType.ReduxDark;
 		CustomModCategories ??= new List<string>();
 		ModCategoryOverrides = ModCategoryOverrides != null
 			? new Dictionary<string, string>(ModCategoryOverrides, StringComparer.OrdinalIgnoreCase)

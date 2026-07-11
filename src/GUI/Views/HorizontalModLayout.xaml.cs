@@ -7,6 +7,8 @@ using DivinityModManager.ViewModels;
 
 using GongSolutions.Wpf.DragDrop.Utilities;
 
+using AdonisUI;
+
 using ReactiveMarbles.ObservableEvents;
 
 using System.ComponentModel;
@@ -54,8 +56,10 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 	private double _lastExpandedModDetailsRowHeight = DefaultModDetailsRowHeight;
 	private double _lastExpandedCategoriesWidth = DefaultExpandedCategoriesWidth;
 	private readonly Dictionary<GridViewColumn, double> _visibleModListColumnWidths = new();
+	private readonly Dictionary<GridView, Dictionary<string, (GridViewColumn Column, int Index)>> _modListColumnRegistry = new();
 	private static readonly string[] OptionalModListColumns =
 	[
+		"File Name",
 		"Version",
 		"Last Updated",
 		"Last Modified",
@@ -131,6 +135,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 	private void AddCustomCategoryMenuItem_Click(object sender, RoutedEventArgs e)
 	{
 		var dialog = new CategoryNameDialog(color: ViewModel.GetSuggestedCustomCategoryColor(), savedColors: ViewModel.Settings.SavedCategoryColors) { Owner = Window.GetWindow(this) };
+		ResourceLocator.SetColorScheme(dialog.Resources, DivinityApp.GetThemeUri(ViewModel.Settings.ColorTheme));
 		var result = dialog.ShowDialog();
 		SaveCategoryDialogColors(dialog);
 		if (result == true && !ViewModel.TryAddCustomModCategory(dialog.CategoryName, dialog.CategoryColor, out var error))
@@ -152,6 +157,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		var category = ViewModel.SelectedModCategory;
 		if (String.IsNullOrWhiteSpace(category) || category.Equals(MainWindowViewModel.AllModsCategory, StringComparison.OrdinalIgnoreCase)) return;
 		var dialog = new CategoryNameDialog(category, ViewModel.GetCurrentCategoryColor(category), false, ViewModel.Settings.SavedCategoryColors) { Owner = Window.GetWindow(this) };
+		ResourceLocator.SetColorScheme(dialog.Resources, DivinityApp.GetThemeUri(ViewModel.Settings.ColorTheme));
 		var result = dialog.ShowDialog();
 		SaveCategoryDialogColors(dialog);
 		if (result == true && !ViewModel.TrySetCategoryColor(category, dialog.CategoryColor, out var error))
@@ -276,6 +282,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		if (!activeList) return;
 		var dialog = new CategoryNameDialog(color: ViewModel.GetSuggestedCustomCategoryColor(), savedColors: ViewModel.Settings.SavedCategoryColors, visualDividerMode: true)
 			{ Owner = Window.GetWindow(this) };
+		ResourceLocator.SetColorScheme(dialog.Resources, DivinityApp.GetThemeUri(ViewModel.Settings.ColorTheme));
 		if (dialog.ShowDialog() != true) { SaveCategoryDialogColors(dialog); return; }
 		SaveCategoryDialogColors(dialog);
 		ViewModel.AddVisualDivider(activeList, position, dialog.CategoryName, dialog.CategoryColor);
@@ -287,6 +294,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		if (divider == null) return;
 		var dialog = new CategoryNameDialog(divider.Title, divider.Color, true, ViewModel.Settings.SavedCategoryColors, true)
 			{ Owner = Window.GetWindow(this) };
+		ResourceLocator.SetColorScheme(dialog.Resources, DivinityApp.GetThemeUri(ViewModel.Settings.ColorTheme));
 		if (dialog.ShowDialog() != true) { SaveCategoryDialogColors(dialog); return; }
 		SaveCategoryDialogColors(dialog);
 		ViewModel.UpdateVisualDivider(item, dialog.CategoryName, dialog.CategoryColor);
@@ -1103,8 +1111,19 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 	{
 		foreach (var gridView in GetModListGridViews())
 		{
-			foreach (var column in gridView.Columns)
+			if (!_modListColumnRegistry.TryGetValue(gridView, out var registry))
 			{
+				registry = new Dictionary<string, (GridViewColumn Column, int Index)>(StringComparer.OrdinalIgnoreCase);
+				_modListColumnRegistry[gridView] = registry;
+			}
+			for (var index = 0; index < gridView.Columns.Count; index++)
+			{
+				var column = gridView.Columns[index];
+				var columnName = GetColumnName(column);
+				if (!String.IsNullOrWhiteSpace(columnName) && !registry.ContainsKey(columnName))
+				{
+					registry[columnName] = (column, index);
+				}
 				if (!_visibleModListColumnWidths.ContainsKey(column))
 				{
 					_visibleModListColumnWidths[column] = column.Width;
@@ -1122,6 +1141,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 
 		return columnName switch
 		{
+			"File Name" => ViewModel.Settings.ShowModListFileNameColumn,
 			"Version" => ViewModel.Settings.ShowModListVersionColumn,
 			"Author" => ViewModel.Settings.ShowModListAuthorColumn,
 			"Last Updated" => ViewModel.Settings.ShowModListLastUpdatedColumn,
@@ -1141,6 +1161,9 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 
 		switch (columnName)
 		{
+			case "File Name":
+				ViewModel.Settings.ShowModListFileNameColumn = isVisible;
+				break;
 			case "Version":
 				ViewModel.Settings.ShowModListVersionColumn = isVisible;
 				break;
@@ -1167,7 +1190,8 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		return columnName switch
 		{
 			"#" => 45,
-			"Name" => 300,
+			"Name" => 240,
+			"File Name" => 190,
 			"Version" => 90,
 			"Last Updated" => 115,
 			"Last Modified" => 115,
@@ -1184,6 +1208,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		{
 			"#" => 35,
 			"Name" => 100,
+			"File Name" => 100,
 			"Version" => 60,
 			"Last Updated" => 70,
 			"Last Modified" => 75,
@@ -1234,10 +1259,10 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 					candidateWidth = MeasureColumnText(listView, mod.Index.ToString(CultureInfo.CurrentCulture)) + 20;
 					break;
 				case "Name":
-					var displayName = mod.NexusModsInformationVisibility == Visibility.Visible && !String.IsNullOrWhiteSpace(mod.NexusModsData?.Name)
-						? mod.NexusModsData.Name
-						: mod.DisplayName;
-					candidateWidth = MeasureColumnText(listView, displayName) + 28 + (GetModNameIconCount(mod) * 20);
+					candidateWidth = MeasureColumnText(listView, mod.DisplayTitle) + 28 + (GetModNameIconCount(mod) * 20);
+					break;
+				case "File Name":
+					candidateWidth = MeasureColumnText(listView, mod.FileName) + 24;
 					break;
 				case "Version":
 					candidateWidth = MeasureColumnText(listView, mod.DisplayVersion) + 24;
@@ -1325,28 +1350,32 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 
 	private void SetGridViewColumnVisibility(GridView gridView, string columnName, bool isVisible)
 	{
-		var column = gridView.Columns.FirstOrDefault(candidate => GetColumnName(candidate) == columnName);
-		if (column == null)
+		CaptureModListColumnWidths();
+		if (!_modListColumnRegistry.TryGetValue(gridView, out var registry) ||
+			!registry.TryGetValue(columnName, out var registeredColumn))
 		{
 			return;
 		}
+		var column = registeredColumn.Column;
 
 		if (isVisible)
 		{
-			if (column.Width == 0)
+			if (!gridView.Columns.Contains(column))
 			{
-				column.Width = _visibleModListColumnWidths.TryGetValue(column, out var storedWidth)
-					? storedWidth
-					: GetDefaultColumnWidth(columnName);
+				var insertionIndex = registry.Values.Count(item => item.Index < registeredColumn.Index && gridView.Columns.Contains(item.Column));
+				gridView.Columns.Insert(Math.Min(insertionIndex, gridView.Columns.Count), column);
 			}
+			column.Width = _visibleModListColumnWidths.TryGetValue(column, out var storedWidth)
+				? storedWidth
+				: GetDefaultColumnWidth(columnName);
 			ClampModListColumnWidth(null, column);
 		}
 		else
 		{
-			if (column.Width != 0)
+			if (gridView.Columns.Contains(column))
 			{
 				_visibleModListColumnWidths[column] = column.Width;
-				column.Width = 0;
+				gridView.Columns.Remove(column);
 			}
 		}
 	}
@@ -1427,6 +1456,17 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		}
 
 		menu.Items.Add(new Separator());
+		var autoSizeItem = new MenuItem { Header = "Auto Size Columns" };
+		autoSizeItem.Click += (_, _) =>
+		{
+			if (listView.View is not GridView visibleGridView) return;
+			foreach (var column in visibleGridView.Columns)
+			{
+				column.Width = GetContentMinimumColumnWidth(listView, GetColumnName(column));
+				_visibleModListColumnWidths[column] = column.Width;
+			}
+		};
+		menu.Items.Add(autoSizeItem);
 		var resetItem = new MenuItem { Header = "Reset Columns" };
 		resetItem.Click += (_, _) =>
 		{
@@ -1497,7 +1537,8 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 	{
 		var requestedLoadOrder = sortBy == "#";
 		if (sortBy == "Version") sortBy = "Version.Version";
-		if (sortBy == "Name") sortBy = "DisplayName";
+		if (sortBy == "Name") sortBy = "DisplayTitle";
+		if (sortBy == "File Name") sortBy = "FileName";
 		if (sortBy == "Modes") sortBy = "Targets";
 		if (sortBy == "Last Updated") sortBy = "DisplayLastUpdated";
 		if (sortBy == "Last Modified") sortBy = "LastModified";

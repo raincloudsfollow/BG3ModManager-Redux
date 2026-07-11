@@ -331,7 +331,7 @@
 										<Setter Property="Effect">
 											<Setter.Value>
 												<DropShadowEffect BlurRadius="10"
-													Color="#8A6AF1"
+													Color="{DynamicResource ReduxAccentColor}"
 													Opacity="0.65"
 													ShadowDepth="0" />
 											</Setter.Value>
@@ -523,6 +523,17 @@
 							Foreground="{DynamicResource ReduxTextMutedBrush}"
 							Text="{Binding Metadata.LinkStatus}" />
 						<WrapPanel Grid.Row="2" Margin="0,7,0,0">
+							<Border Style="{StaticResource ModDetailsMetadataChipStyle}"
+								ToolTip="{Binding SourceComponentTooltip}"
+								Visibility="{Binding SourceComponentVisibility}">
+								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+									Text="{Binding SourceComponentSummary}" />
+							</Border>
+							<Border Style="{StaticResource ModDetailsMetadataChipStyle}"
+								ToolTip="The specific local package selected in the mod list.">
+								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+									Text="{Binding DisplayName, StringFormat='Installed package: {0}'}" />
+							</Border>
 							<Border Style="{StaticResource ModDetailsMetadataChipStyle}">
 								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
 									Text="{Binding Metadata.VersionLabel}" />

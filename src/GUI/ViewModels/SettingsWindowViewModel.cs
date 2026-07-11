@@ -20,14 +20,16 @@ public enum SettingsWindowTab
 {
 	[Description("Mod Manager Settings")]
 	Default = 0,
+	[Description("Theme and Appearance")]
+	Appearance = 1,
 	[Description("Script Extender Settings")]
-	Extender = 1,
+	Extender = 2,
 	[Description("Script Extender Updater Settings")]
-	ExtenderUpdater = 2,
+	ExtenderUpdater = 3,
 	[Description("Keybindings")]
-	Keybindings = 3,
+	Keybindings = 4,
 	[Description("Advanced Settings")]
-	Advanced = 4
+	Advanced = 5
 }
 
 public class GameLaunchParamEntry : ReactiveObject
@@ -338,10 +340,11 @@ public class SettingsWindowViewModel : ReactiveObject
 
 		if (View.IsVisible)
 		{
-			switch (SelectedTabIndex)
-			{
-				case SettingsWindowTab.Default:
-				case SettingsWindowTab.Advanced:
+				switch (SelectedTabIndex)
+				{
+					case SettingsWindowTab.Default:
+					case SettingsWindowTab.Appearance:
+					case SettingsWindowTab.Advanced:
 					if (savedMainSettings && !IsAlertActive) ShowAlert("Saved settings.", AlertType.Success, 10);
 					break;
 				case SettingsWindowTab.Extender:
@@ -461,6 +464,9 @@ public class SettingsWindowViewModel : ReactiveObject
 				{
 					case SettingsWindowTab.Default:
 						Settings.SetToDefault();
+						break;
+					case SettingsWindowTab.Appearance:
+						Settings.ColorTheme = ReduxThemeType.ReduxDark;
 						break;
 					case SettingsWindowTab.Extender:
 						Settings.ExtenderSettings.SetToDefault();

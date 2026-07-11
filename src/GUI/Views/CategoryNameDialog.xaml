@@ -16,6 +16,10 @@
 	TitleBarBackground="{DynamicResource ReduxSurfaceElevatedBrush}"
 	TitleBarForeground="{DynamicResource ReduxTextPrimaryBrush}">
 	<adonisUi:AdonisWindow.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceDictionary Source="../Themes/MainResourceDictionary.xaml" />
+			</ResourceDictionary.MergedDictionaries>
 		<Style x:Key="CategoryColorSwatchStyle" TargetType="Border">
 			<Setter Property="Width" Value="32" /><Setter Property="Height" Value="25" />
 			<Setter Property="Margin" Value="0,0,8,0" /><Setter Property="CornerRadius" Value="6" />
@@ -27,12 +31,13 @@
 			<Setter Property="Height" Value="20" /><Setter Property="Minimum" Value="0" /><Setter Property="Maximum" Value="255" />
 			<Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Slider">
 				<Track x:Name="PART_Track" Height="16" VerticalAlignment="Center">
-					<Track.DecreaseRepeatButton><RepeatButton Command="Slider.DecreaseLarge"><RepeatButton.Template><ControlTemplate TargetType="RepeatButton"><Border Height="6" VerticalAlignment="Center" Background="{DynamicResource ReduxAccentSoftBrush}" CornerRadius="3" /></ControlTemplate></RepeatButton.Template></RepeatButton></Track.DecreaseRepeatButton>
+					<Track.DecreaseRepeatButton><RepeatButton Command="Slider.DecreaseLarge"><RepeatButton.Template><ControlTemplate TargetType="RepeatButton"><Border Height="6" VerticalAlignment="Center" Background="{DynamicResource ReduxAccentBrush}" CornerRadius="3" /></ControlTemplate></RepeatButton.Template></RepeatButton></Track.DecreaseRepeatButton>
 					<Track.Thumb><Thumb Width="15" Height="15"><Thumb.Template><ControlTemplate TargetType="Thumb"><Ellipse Fill="{DynamicResource ReduxTextPrimaryBrush}" Stroke="{DynamicResource ReduxBorderStrongBrush}" StrokeThickness="1" /></ControlTemplate></Thumb.Template></Thumb></Track.Thumb>
 					<Track.IncreaseRepeatButton><RepeatButton Command="Slider.IncreaseLarge"><RepeatButton.Template><ControlTemplate TargetType="RepeatButton"><Border Height="6" VerticalAlignment="Center" Background="{DynamicResource ReduxBorderStrongBrush}" CornerRadius="3" /></ControlTemplate></RepeatButton.Template></RepeatButton></Track.IncreaseRepeatButton>
 				</Track>
 			</ControlTemplate></Setter.Value></Setter>
 		</Style>
+		</ResourceDictionary>
 	</adonisUi:AdonisWindow.Resources>
 	<Border Background="{DynamicResource ReduxSurfaceBrush}" BorderBrush="{DynamicResource ReduxBorderBrush}" BorderThickness="1">
 	<Grid Margin="18">

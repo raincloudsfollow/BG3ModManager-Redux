@@ -1,0 +1,34 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<!--
+		Parchment intentionally reuses the shared Redux Light control mappings.
+		Only semantic colors are overridden here; layouts, fonts, icons, templates,
+		and behavior remain common to every built-in and future custom theme.
+	-->
+	<ResourceDictionary.MergedDictionaries>
+		<ResourceDictionary Source="Light.xaml" />
+	</ResourceDictionary.MergedDictionaries>
+
+	<!-- A quieter aged-paper hierarchy with dark ink and wax-seal emphasis. -->
+	<Color x:Key="ReduxWindowColor">#E6DCC6</Color>
+	<Color x:Key="ReduxListInteriorColor">#EDE2CC</Color>
+	<Color x:Key="ReduxSurfaceColor">#E2D5BB</Color>
+	<Color x:Key="ReduxSurfaceElevatedColor">#D8CCB2</Color>
+	<Color x:Key="ReduxSurfaceMutedColor">#CDBEA4</Color>
+	<Color x:Key="ReduxBorderColor">#A89980</Color>
+	<Color x:Key="ReduxBorderStrongColor">#8F8169</Color>
+	<Color x:Key="ReduxAccentColor">#7B1E1E</Color>
+	<Color x:Key="ReduxAccentHoverColor">#8F3A3C</Color>
+	<Color x:Key="ReduxAccentSoftColor">#D5B4A8</Color>
+	<Color x:Key="ReduxSelectionColor">#CDA99E</Color>
+	<Color x:Key="ReduxCyanColor">#587B78</Color>
+	<Color x:Key="ReduxSuccessColor">#6B7A4E</Color>
+	<Color x:Key="ReduxSuccessSoftColor">#CDD4B6</Color>
+	<Color x:Key="ReduxWarningColor">#C1912F</Color>
+	<Color x:Key="ReduxErrorColor">#8C2028</Color>
+	<Color x:Key="ReduxInfoColor">#5E7187</Color>
+	<Color x:Key="ReduxTextPrimaryColor">#2F2720</Color>
+	<Color x:Key="ReduxTextSecondaryColor">#5A4E3F</Color>
+	<Color x:Key="ReduxTextMutedColor">#7B6D59</Color>
+	<Color x:Key="ReduxAccentForegroundColor">#FFF7E8</Color>
+</ResourceDictionary>

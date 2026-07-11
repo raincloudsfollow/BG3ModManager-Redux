@@ -348,25 +348,26 @@ public partial class MainWindow : AdonisWindow, IViewFor<MainWindowViewModel>, I
 		return new CachedAutomationPeer(this);
 	}
 
-	public void UpdateColorTheme(bool darkMode)
+	public void UpdateColorTheme(ReduxThemeType theme)
 	{
-		ResourceLocator.SetColorScheme(this.Resources, !darkMode ? DivinityApp.LightTheme : DivinityApp.DarkTheme);
-		ResourceLocator.SetColorScheme(SettingsWindow.Resources, !darkMode ? DivinityApp.LightTheme : DivinityApp.DarkTheme);
+		var themeUri = DivinityApp.GetThemeUri(theme);
+		ResourceLocator.SetColorScheme(this.Resources, themeUri);
+		ResourceLocator.SetColorScheme(SettingsWindow.Resources, themeUri);
 		if (AboutWindow != null)
 		{
-			ResourceLocator.SetColorScheme(AboutWindow.Resources, !darkMode ? DivinityApp.LightTheme : DivinityApp.DarkTheme);
+			ResourceLocator.SetColorScheme(AboutWindow.Resources, themeUri);
 		}
 		if (VersionGeneratorWindow != null)
 		{
-			ResourceLocator.SetColorScheme(VersionGeneratorWindow.Resources, !darkMode ? DivinityApp.LightTheme : DivinityApp.DarkTheme);
+			ResourceLocator.SetColorScheme(VersionGeneratorWindow.Resources, themeUri);
 		}
 		if (UpdateWindow != null)
 		{
-			ResourceLocator.SetColorScheme(UpdateWindow.Resources, !darkMode ? DivinityApp.LightTheme : DivinityApp.DarkTheme);
+			ResourceLocator.SetColorScheme(UpdateWindow.Resources, themeUri);
 		}
 		if (HelpWindow != null)
 		{
-			ResourceLocator.SetColorScheme(HelpWindow.Resources, !darkMode ? DivinityApp.LightTheme : DivinityApp.DarkTheme);
+			ResourceLocator.SetColorScheme(HelpWindow.Resources, themeUri);
 		}
 	}
 

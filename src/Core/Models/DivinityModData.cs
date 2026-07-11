@@ -41,6 +41,10 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 	[Reactive] public string ModType { get; set; }
 	[Reactive] public string DisplayCategory { get; set; }
 	[Reactive] public List<ModCategoryDisplayData> DisplayCategories { get; set; } = new();
+	[Reactive] public int SourceComponentCount { get; set; } = 1;
+	[Reactive] public string SourceComponentSummary { get; set; }
+	[Reactive] public string SourceComponentTooltip { get; set; }
+	[Reactive] public Visibility SourceComponentVisibility { get; set; } = Visibility.Collapsed;
 	[Reactive] public string VisualDividerTitle { get; set; }
 	[Reactive] public bool ShowVisualDivider { get; set; }
 	[Reactive] public bool IsVisualDivider { get; set; }
@@ -212,6 +216,8 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 	[ObservableAsProperty] public string ScriptExtenderSupportToolTipText { get; }
 	[ObservableAsProperty] public string OsirisStatusToolTipText { get; }
 	[ObservableAsProperty] public string LastModifiedDateText { get; }
+	[ObservableAsProperty] public string LoadOrderDisplayText { get; }
+	[ObservableAsProperty] public string DisplayTitle { get; }
 	[ObservableAsProperty] public string DisplayVersion { get; }
 	[ObservableAsProperty] public DateTime? DisplayLastUpdated { get; }
 	[ObservableAsProperty] public string DisplaySource { get; }
@@ -449,6 +455,14 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 			.ToUIProperty(this, x => x.OpenNexusModsLinkVisibility, Visibility.Collapsed);
 
 		// Presentation-only provider label used by the mod list.
+		this.WhenAnyValue(x => x.Metadata.Title)
+			.ToUIProperty(this, x => x.DisplayTitle, DisplayName);
+		this.WhenAnyValue(x => x.IsActive, x => x.Index)
+			.Select(state => state.Item1 && state.Item2 >= 0
+				? state.Item2.ToString(CultureInfo.CurrentCulture)
+				: "Not active")
+			.ToUIProperty(this, x => x.LoadOrderDisplayText, "Not active");
+
 		this.WhenAnyValue(x => x.Metadata.SourceLabel)
 			.ToUIProperty(this, x => x.DisplaySource, "Local");
 

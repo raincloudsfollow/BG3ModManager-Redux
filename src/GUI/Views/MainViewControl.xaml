@@ -180,7 +180,7 @@
 						    DockPanel.Dock="Bottom"
 						    Text="{Binding MainProgressWorkText, FallbackValue='Archiving pak 4/10...'}"
 						    TextAlignment="Center" />
-						<ProgressBar MinHeight="15"
+						<ProgressBar MinHeight="15" Style="{StaticResource ReduxProgressBarStyle}"
 						    VerticalAlignment="Center"
 						    DockPanel.Dock="Top"
 						    Maximum="1"
