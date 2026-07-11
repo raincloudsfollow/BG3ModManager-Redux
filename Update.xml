@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <item>
 	<version>1.0.12.9</version>
-	<url>https://github.com/LaughingLeader/BG3ModManager/releases/latest/download/BG3ModManager_Latest.zip</url>
-	<changelog>https://raw.githubusercontent.com/wiki/LaughingLeader/BG3ModManager/Changelog.md</changelog>
+	<url>https://github.com/raincloudsfollow/BG3ModManager-Redux/releases/latest/download/BG3ModManager-Redux.zip</url>
+	<changelog>https://github.com/raincloudsfollow/BG3ModManager-Redux/releases</changelog>
 	<mandatory>false</mandatory>
 </item>

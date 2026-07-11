@@ -1,5 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<!-- Keep accidental project-local WPF intermediates out of SDK wildcard item discovery. -->
+		<DefaultItemExcludes>$(DefaultItemExcludes);$(MSBuildProjectDirectory)\obj\**</DefaultItemExcludes>
 		<OutputType>WinExe</OutputType>
 		<UseWPF>true</UseWPF>
 		<TargetFramework>net8.0-windows10.0.22621.0</TargetFramework>
@@ -74,6 +76,15 @@
 		<Resource Include="Resources\Icons\*.png">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Resource>
+		<Resource Include="Resources\Icons\Platforms\*.svg" />
+		<Resource Include="Resources\Icons\Platforms\*.png" />
+		<Resource Include="Resources\Fonts\Inter-Regular.ttf;Resources\Fonts\Inter-Medium.ttf;Resources\Fonts\Inter-SemiBold.ttf" />
+		<None Include="Resources\Fonts\LICENSE.txt">
+			<Link>Licenses\Inter-LICENSE.txt</Link>
+			<TargetPath>Licenses\Inter-LICENSE.txt</TargetPath>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+		</None>
 		<Resource Include="FodyWeavers.xml" />
 		<Resource Include="Resources\BG3MMSplashScreen.png" />
 	</ItemGroup>

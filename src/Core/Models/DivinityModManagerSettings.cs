@@ -117,6 +117,39 @@ public class DivinityModManagerSettings : ReactiveObject
 	[DataMember, Reactive] public bool ShowModListSourceColumn { get; set; }
 
 	[DefaultValue(true)]
+	[DataMember, Reactive] public bool ShowModListCategoryColumn { get; set; }
+
+	[DefaultValue(true)]
+	[SettingsEntry("Hide empty mod categories", "Hide categories with no matching installed mods from the Categories sidebar.")]
+	[DataMember, Reactive] public bool HideEmptyModCategories { get; set; }
+
+	[DataMember, Reactive] public List<string> CustomModCategories { get; set; } = new();
+	// Legacy single-category assignments are retained for migration from early Redux builds.
+	[DataMember, Reactive] public Dictionary<string, string> ModCategoryOverrides { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+	[DataMember, Reactive] public Dictionary<string, List<string>> ModCategoryAssignments { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+	[DataMember, Reactive] public Dictionary<string, string> ModCategoryColors { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+	[DataMember, Reactive] public List<string> SavedCategoryColors { get; set; } = new();
+	[DataMember, Reactive] public List<string> DisabledModCategories { get; set; } = new();
+
+	[DefaultValue(false)]
+	[DataMember, Reactive] public bool SaveModCategoryFilterBetweenSessions { get; set; }
+
+	[DefaultValue("All Mods")]
+	[DataMember, Reactive] public string SavedModCategoryFilter { get; set; } = "All Mods";
+
+	[DefaultValue(false)]
+	[DataMember, Reactive] public bool DisableNewModCategoryIndicators { get; set; }
+	[DefaultValue(false)]
+	[DataMember, Reactive] public bool NewModCategoryIndicatorInitialized { get; set; }
+	[DataMember, Reactive] public List<string> KnownCategorizedModIds { get; set; } = new();
+	[DataMember, Reactive] public Dictionary<string, List<string>> UnseenCategoryModIds { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+	// Redux visual dividers are presentation-only markers anchored above a real mod UUID.
+	// They never enter the load order or exported modsettings data.
+	// Retained so settings written by the first anchored-divider prototype still deserialize safely.
+	[DataMember, Reactive] public Dictionary<string, string> ModListVisualDividers { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+	[DataMember, Reactive] public List<ModListVisualDividerData> VisualModListDividers { get; set; } = new();
+
+	[DefaultValue(true)]
 	[SettingsEntry("Shift Focus on Swap", "When moving selected mods to the opposite list with Enter, move focus to that list as well")]
 	[DataMember, Reactive] public bool ShiftListFocusOnSwap { get; set; }
 
@@ -204,6 +237,33 @@ public class DivinityModManagerSettings : ReactiveObject
 	[OnDeserialized]
 	private void OnDeserialized(StreamingContext context)
 	{
+		CustomModCategories ??= new List<string>();
+		ModCategoryOverrides = ModCategoryOverrides != null
+			? new Dictionary<string, string>(ModCategoryOverrides, StringComparer.OrdinalIgnoreCase)
+			: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+		ModCategoryAssignments = ModCategoryAssignments != null
+			? new Dictionary<string, List<string>>(ModCategoryAssignments, StringComparer.OrdinalIgnoreCase)
+			: new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+		ModCategoryColors = ModCategoryColors != null
+			? new Dictionary<string, string>(ModCategoryColors, StringComparer.OrdinalIgnoreCase)
+			: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+		SavedCategoryColors ??= new List<string>();
+		DisabledModCategories ??= new List<string>();
+		KnownCategorizedModIds ??= new List<string>();
+		UnseenCategoryModIds = UnseenCategoryModIds != null
+			? new Dictionary<string, List<string>>(UnseenCategoryModIds, StringComparer.OrdinalIgnoreCase)
+			: new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+		ModListVisualDividers = ModListVisualDividers != null
+			? new Dictionary<string, string>(ModListVisualDividers, StringComparer.OrdinalIgnoreCase)
+			: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+		VisualModListDividers ??= new List<ModListVisualDividerData>();
+		foreach (var legacyAssignment in ModCategoryOverrides.Where(entry => !String.IsNullOrWhiteSpace(entry.Value)))
+		{
+			if (!ModCategoryAssignments.ContainsKey(legacyAssignment.Key))
+			{
+				ModCategoryAssignments[legacyAssignment.Key] = new List<string> { legacyAssignment.Value };
+			}
+		}
 		if (TryGetExtraProperty(AdditionalFields, "LaunchThroughSteam", out bool launchThroughSteam) && launchThroughSteam == true)
 		{
 			LaunchType = LaunchGameType.Steam;

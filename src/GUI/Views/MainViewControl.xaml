@@ -120,6 +120,7 @@
 				</Setter>
 			</Style>
 			<Style x:Key="MenuItemHightlightBlink" BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="{x:Type MenuItem}">
+				<Setter Property="adonisExtensions:CornerRadiusExtension.CornerRadius" Value="7" />
 				<Style.Triggers>
 					<DataTrigger Binding="{Binding HighlightExtenderDownload}" Value="True">
 						<Setter Property="Foreground" Value="Gold" />
@@ -218,11 +219,15 @@
 						Padding="4,2"
 						Background="{DynamicResource ReduxWindowBrush}"
 						Foreground="{DynamicResource ReduxTextPrimaryBrush}">
+						<Menu.Resources>
+							<Style BasedOn="{StaticResource {x:Type MenuItem}}" TargetType="{x:Type MenuItem}">
+								<Setter Property="adonisExtensions:CornerRadiusExtension.CornerRadius" Value="7" />
+							</Style>
+						</Menu.Resources>
 						<MenuItem x:Name="FileMenuItem" Header="File" />
 						<MenuItem x:Name="EditMenuItem" Header="Edit" />
 						<MenuItem x:Name="SettingsMenuItem" Header="Settings" />
 						<!--<MenuItem x:Name="ViewMenuItem" Header="View" />-->
-						<MenuItem x:Name="GoMenuItem" Header="Go" />
 						<MenuItem x:Name="ToolsMenuItem" Header="Tools" Style="{StaticResource MenuItemHightlightBlink}" />
 						<MenuItem x:Name="HelpMenuItem" Header="Help" />
 					</Menu>
@@ -376,11 +381,11 @@
 						<RowDefinition Height="*" />
 					</Grid.RowDefinitions>
 					<Border Margin="10,8,10,10"
-					    Padding="10,8"
+					    Padding="10,7"
 					    Background="{DynamicResource ReduxSurfaceElevatedBrush}"
 					    BorderBrush="{DynamicResource ReduxBorderBrush}"
 					    BorderThickness="1"
-					    CornerRadius="8">
+					    CornerRadius="10">
 						<Grid>
 						<Grid.ColumnDefinitions>
 							<ColumnDefinition Width="Auto" />
@@ -453,10 +458,11 @@
 								<Setter Property="Fill" Value="{DynamicResource ReduxBorderStrongBrush}" />
 							</Style>
 							<Style x:Key="ToolbarButtonBaseStyle" BasedOn="{StaticResource IconButtonStyle}" TargetType="{x:Type Button}">
-								<Setter Property="Width" Value="28" />
+								<Setter Property="Width" Value="30" />
 								<Setter Property="Height" Value="30" />
-								<Setter Property="Background" Value="{DynamicResource ReduxSurfaceMutedBrush}" />
-								<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
+								<Setter Property="Margin" Value="1,0" />
+								<Setter Property="Background" Value="Transparent" />
+								<Setter Property="BorderBrush" Value="Transparent" />
 								<Setter Property="BorderThickness" Value="1" />
 								<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
 								<Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -468,21 +474,25 @@
 							<Style BasedOn="{StaticResource {x:Type ComboBox}}" TargetType="{x:Type ComboBox}">
 								<Setter Property="MinHeight" Value="30" />
 								<Setter Property="Padding" Value="9,3" />
-								<Setter Property="Background" Value="{DynamicResource ReduxSurfaceMutedBrush}" />
-								<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
+								<Setter Property="Background" Value="{DynamicResource ReduxSurfaceBrush}" />
+								<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderBrush}" />
 								<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
 								<Setter Property="adonisExtensions:CornerRadiusExtension.CornerRadius" Value="6" />
 							</Style>
 							<Style x:Key="ToolbarTextButtonStyle" BasedOn="{StaticResource ToolbarButtonBaseStyle}" TargetType="{x:Type Button}">
 								<Setter Property="Width" Value="Auto" />
 								<Setter Property="Height" Value="30" />
-								<Setter Property="Margin" Value="2,0,6,0" />
-								<Setter Property="Padding" Value="10,0" />
-								<Setter Property="Background" Value="{DynamicResource ReduxSurfaceMutedBrush}" />
-								<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
+								<Setter Property="Margin" Value="2,0" />
+								<Setter Property="Padding" Value="9,0" />
+								<Setter Property="Background" Value="Transparent" />
+								<Setter Property="BorderBrush" Value="Transparent" />
 								<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
 								<Setter Property="BorderThickness" Value="1" />
 								<Setter Property="Tag" Value="{Binding}" />
+							</Style>
+							<Style x:Key="ToolbarActionButtonStyle" BasedOn="{StaticResource ToolbarTextButtonStyle}" TargetType="{x:Type Button}">
+								<Setter Property="Background" Value="{DynamicResource ReduxSurfaceMutedBrush}" />
+								<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderBrush}" />
 							</Style>
 							<Style x:Key="ToolbarPrimaryButtonStyle" BasedOn="{StaticResource ToolbarTextButtonStyle}" TargetType="{x:Type Button}">
 								<Setter Property="Background" Value="{DynamicResource ReduxAccentBrush}" />
@@ -490,10 +500,32 @@
 								<Setter Property="Foreground" Value="{DynamicResource ReduxAccentForegroundBrush}" />
 								<Setter Property="Template" Value="{StaticResource ToolbarPrimaryButtonTemplate}" />
 							</Style>
+							<Style x:Key="ToolbarGroupStyle" TargetType="{x:Type Border}">
+								<Setter Property="Margin" Value="0,0,3,0" />
+								<Setter Property="Padding" Value="9,3,12,5" />
+								<Setter Property="Background" Value="Transparent" />
+								<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderBrush}" />
+								<Setter Property="BorderThickness" Value="0,0,1,0" />
+								<Setter Property="CornerRadius" Value="0" />
+							</Style>
+							<Style x:Key="ToolbarGroupLabelStyle" BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
+								<Setter Property="Margin" Value="2,0,2,3" />
+								<Setter Property="FontSize" Value="9" />
+								<Setter Property="FontWeight" Value="Medium" />
+								<Setter Property="Foreground" Value="{DynamicResource ReduxTextMutedBrush}" />
+							</Style>
+							<Style x:Key="ToolbarInlineLabelStyle" BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
+								<Setter Property="Margin" Value="2,0,5,0" />
+								<Setter Property="Foreground" Value="{DynamicResource ReduxTextSecondaryBrush}" />
+							</Style>
 							<Style BasedOn="{StaticResource {x:Type ContextMenu}}" TargetType="{x:Type ContextMenu}">
 								<Setter Property="DataContext" Value="{Binding RelativeSource={RelativeSource Mode=Self}, Path=PlacementTarget.Tag}" />
 							</Style>
 						</Grid.Resources>
+						<Border Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource ToolbarGroupStyle}">
+							<StackPanel>
+								<TextBlock Style="{StaticResource ToolbarGroupLabelStyle}" Text="INSTALL / PROFILE" />
+								<StackPanel Orientation="Horizontal">
 						<Button x:Name="ImportModButton"
 							Margin="0,0,10,0"
 							Style="{StaticResource ToolbarPrimaryButtonStyle}"
@@ -503,7 +535,7 @@
 								<TextBlock Text="Install Mod" />
 							</StackPanel>
 						</Button>
-						<Grid Grid.Column="1">
+						<Grid Height="30" VerticalAlignment="Center">
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="Auto" />
 								<ColumnDefinition Width="*" />
@@ -526,17 +558,24 @@
 								</ComboBox.ContextMenu>
 							</ComboBox>
 						</Grid>
-						<Grid Grid.Column="2" Margin="4,0">
+								</StackPanel>
+							</StackPanel>
+						</Border>
+						<Border Grid.Column="2" Style="{StaticResource ToolbarGroupStyle}">
+							<StackPanel>
+								<TextBlock Style="{StaticResource ToolbarGroupLabelStyle}" Text="LOAD ORDER" />
+						<Grid Height="30" VerticalAlignment="Center">
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="Auto" />
 								<ColumnDefinition Width="*" />
 							</Grid.ColumnDefinitions>
-							<TextBlock Margin="0,0,4,0" VerticalAlignment="Center" Text="Mod Order" />
+							<TextBlock Margin="0,0,6,0" VerticalAlignment="Center" Text="Mod Order" />
 							<ComboBox x:Name="OrdersComboBox"
 							    Grid.Column="1"
 							    MinWidth="140"
-							    MinHeight="16"
+							    MinHeight="30"
 							    MaxWidth="250"
+							    VerticalAlignment="Center"
 							    DisplayMemberPath="Name"
 							    IsTextSearchEnabled="False"
 							    KeyDown="ComboBox_KeyDown_LoseFocus"
@@ -558,13 +597,14 @@
 								</ComboBox.ContextMenu>
 							</ComboBox>
 						</Grid>
+							</StackPanel>
+						</Border>
 						<Grid Grid.Column="3" Margin="1,0,0,0">
-							<Grid.ColumnDefinitions>
-								<ColumnDefinition Width="Auto" />
-								<ColumnDefinition Width="Auto" />
-								<ColumnDefinition Width="Auto" />
-							</Grid.ColumnDefinitions>
 							<StackPanel Orientation="Horizontal">
+								<Border Style="{StaticResource ToolbarGroupStyle}">
+									<StackPanel>
+										<TextBlock Style="{StaticResource ToolbarGroupLabelStyle}" Text="ORDER ACTIONS" />
+										<StackPanel Orientation="Horizontal">
 								<Button x:Name="SaveButton" ToolTip="Save Load Order to File">
 									<Button.Resources>
 										<Style BasedOn="{StaticResource {x:Type controls:AutoGrayableImage}}" TargetType="{x:Type controls:AutoGrayableImage}">
@@ -586,12 +626,16 @@
 								<Button x:Name="AddNewOrderButton" ToolTip="Add New Load Order">
 									<controls:AutoGrayableImage Source="{StaticResource AddItemImage}" />
 								</Button>
-							</StackPanel>
-							<Rectangle Grid.Column="1" Margin="8,0,6,0" Style="{StaticResource VerticalSeparator}" />
-							<StackPanel Grid.Column="2" Orientation="Horizontal">
+										</StackPanel>
+									</StackPanel>
+								</Border>
+								<Border Style="{StaticResource ToolbarGroupStyle}">
+									<StackPanel>
+										<TextBlock Style="{StaticResource ToolbarGroupLabelStyle}" Text="EXPORT" />
+										<StackPanel Orientation="Horizontal">
 								<StackPanel.Resources />
 								<Button x:Name="ExportToModSettingsButton"
-									Style="{StaticResource ToolbarTextButtonStyle}"
+									Style="{StaticResource ToolbarActionButtonStyle}"
 									ToolTip="Export Order to Game">
 									<StackPanel Orientation="Horizontal">
 										<controls:AutoGrayableImage Margin="0,0,6,0" Source="{StaticResource ExportScriptImage}" />
@@ -613,14 +657,18 @@
 								<Button x:Name="ExportOrderToArchiveAsButton" ToolTip="Export Active Mods to Zip As...">
 									<controls:AutoGrayableImage Source="{StaticResource ZipFileAsImage}" />
 								</Button>
-								<Rectangle />
-								<StackPanel Orientation="Horizontal">
-									<TextBlock Text="Campaign" />
+										</StackPanel>
+									</StackPanel>
+								</Border>
+								<Border Style="{StaticResource ToolbarGroupStyle}">
+									<StackPanel>
+										<TextBlock Style="{StaticResource ToolbarGroupLabelStyle}" Text="CAMPAIGN" />
+										<StackPanel Height="30" VerticalAlignment="Center" Orientation="Horizontal">
 									<ComboBox x:Name="AdventureModComboBox"
 									    Grid.Column="1"
 									    MinWidth="100"
-									    MinHeight="16"
-									    HorizontalAlignment="Center"
+									    MinHeight="30"
+									    HorizontalAlignment="Left"
 									    VerticalAlignment="Center"
 									    DisplayMemberPath="DisplayName"
 									    IsTextSearchEnabled="False"
@@ -633,18 +681,21 @@
 											</ContextMenu>
 										</ComboBox.ContextMenu>
 									</ComboBox>
-								</StackPanel>
-								<Rectangle />
+										</StackPanel>
+									</StackPanel>
+								</Border>
+								<Border Style="{StaticResource ToolbarGroupStyle}">
+									<StackPanel>
+										<TextBlock Style="{StaticResource ToolbarGroupLabelStyle}" Text="TOOLS" />
+										<StackPanel Orientation="Horizontal">
 								<Button x:Name="RefreshButton"
-									Style="{StaticResource ToolbarTextButtonStyle}"
+									Style="{StaticResource ToolbarActionButtonStyle}"
 									ToolTip="Refresh Mods">
 									<StackPanel Orientation="Horizontal">
 										<controls:AutoGrayableImage Margin="0,0,6,0" Source="{StaticResource RefreshImage}" />
 										<TextBlock Text="Refresh" />
 									</StackPanel>
 								</Button>
-								<Rectangle />
-								<TextBlock Text="Shortcuts" />
 								<Button x:Name="OpenModsFolderButton" ToolTip="Open Mods Folder">
 									<controls:AutoGrayableImage Source="{StaticResource OpenFolderImage}" />
 									<Button.ContextMenu>
@@ -661,9 +712,16 @@
 										</ContextMenu>
 									</Button.ContextMenu>
 								</Button>
+										</StackPanel>
+									</StackPanel>
+								</Border>
+								<Border Style="{StaticResource ToolbarGroupStyle}">
+									<StackPanel>
+										<TextBlock Style="{StaticResource ToolbarGroupLabelStyle}" Text="LAUNCH" />
+										<StackPanel Orientation="Horizontal">
 								<Button x:Name="OpenGameButton"
-									Style="{StaticResource ToolbarTextButtonStyle}"
-									ToolTip="Launch Game">
+									Style="{StaticResource ToolbarPrimaryButtonStyle}"
+									ToolTip="Launch Game (Ctrl+Shift+G)">
 									<StackPanel Orientation="Horizontal">
 										<controls:AutoGrayableImage Margin="0,0,6,0" Source="{StaticResource OpenGameImage}" />
 										<TextBlock Text="Launch Game" />
@@ -676,16 +734,45 @@
 									</Button.ContextMenu>
 								</Button>
 								<ComboBox x:Name="GameLaunchActionComboBox"
+								    MinWidth="104"
 								    DisplayMemberPath="Description"
 								    ItemsSource="{Binding Source={ext:EnumExtension {x:Type dapp:DivinityGameLaunchWindowAction}}}"
 								    SelectedValuePath="Value"
-								    ToolTip="When the game launches through the mod manager, this action will be performed" />
-								<Rectangle />
-								<TextBlock Text="Support" />
-								<Button x:Name="OpenDonationPageButton" ToolTip="Tip the Developer (Ko-fi)&#x0a;https://ko-fi.com/laughingleader">
+								    ToolTip="Choose what Redux does after launching the game." />
+										</StackPanel>
+									</StackPanel>
+								</Border>
+								<Border Style="{StaticResource ToolbarGroupStyle}">
+									<StackPanel>
+										<TextBlock Style="{StaticResource ToolbarGroupLabelStyle}" Text="QUICK LINKS" />
+										<Button x:Name="QuickLinksButton"
+											Style="{StaticResource ToolbarTextButtonStyle}"
+											Click="QuickLinksButton_Click"
+											ToolTip="Open useful BG3 and Redux links">
+											<TextBlock Text="Quick Links  &#x25BE;" />
+										<Button.ContextMenu>
+											<ContextMenu>
+												<MenuItem Command="{Binding Keys.OpenModsFolder.Command}" Header="Open Mods Folder" InputGestureText="Ctrl+1" />
+												<MenuItem Command="{Binding Keys.OpenGameFolder.Command}" Header="Open Game Folder" InputGestureText="Ctrl+2" />
+												<MenuItem Command="{Binding Keys.OpenLogsFolder.Command}" Header="Open Extender Logs Folder" InputGestureText="Ctrl+4" />
+												<MenuItem Header="Open Save Games Folder" Click="OpenSaveGamesFolder_Click" />
+												<Separator />
+												<MenuItem Header="BG3 on Nexus Mods" Click="OpenBg3Nexus_Click" />
+												<MenuItem Header="BG3 Script Extender on GitHub" Click="OpenScriptExtenderRepo_Click" />
+												<MenuItem Header="BG3 Mod Manager Redux on GitHub" Click="OpenReduxRepo_Click" />
+											</ContextMenu>
+											</Button.ContextMenu>
+										</Button>
+									</StackPanel>
+								</Border>
+								<Button x:Name="OpenDonationPageButton"
+									Visibility="Collapsed"
+									ToolTip="Tip the Developer (Ko-fi)&#x0a;https://ko-fi.com/laughingleader">
 									<controls:AutoGrayableImage Source="{StaticResource OpenDonationLinkImage}" />
 								</Button>
-								<Button x:Name="OpenRepoPageButton" ToolTip="Open Project Page (Github)">
+								<Button x:Name="OpenRepoPageButton"
+									Visibility="Collapsed"
+									ToolTip="Open Project Page (Github)">
 									<controls:AutoGrayableImage Source="{StaticResource OpenRepoLinkImage}" />
 								</Button>
 							</StackPanel>

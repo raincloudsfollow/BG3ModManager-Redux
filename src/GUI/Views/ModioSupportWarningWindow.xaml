@@ -9,7 +9,7 @@
 	MinHeight="360"
 	MaxWidth="650"
 	MaxHeight="360"
-	FontFamily="{DynamicResource ReduxFontFamily}"
+	FontFamily="{DynamicResource Redux.FontFamily.UI}"
 	FontWeight="Medium"
 	TextOptions.TextFormattingMode="Display"
 	TextOptions.TextRenderingMode="ClearType"

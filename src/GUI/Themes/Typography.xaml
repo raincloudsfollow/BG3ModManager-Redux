@@ -1,0 +1,10 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+	<!--
+		Typography is intentionally shared by every Redux theme. Color themes should
+		override palette tokens only, never the app's font family or layout.
+	-->
+	<FontFamily x:Key="Redux.FontFamily.UI">pack://application:,,,/BG3ModManager;component/Resources/Fonts/#Inter</FontFamily>
+	<!-- Legacy alias retained for extension dictionaries that used the original key. -->
+	<FontFamily x:Key="ReduxFontFamily">pack://application:,,,/BG3ModManager;component/Resources/Fonts/#Inter</FontFamily>
+</ResourceDictionary>

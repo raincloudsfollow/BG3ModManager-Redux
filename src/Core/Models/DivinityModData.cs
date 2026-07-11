@@ -39,6 +39,15 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 	}
 
 	[Reactive] public string ModType { get; set; }
+	[Reactive] public string DisplayCategory { get; set; }
+	[Reactive] public List<ModCategoryDisplayData> DisplayCategories { get; set; } = new();
+	[Reactive] public string VisualDividerTitle { get; set; }
+	[Reactive] public bool ShowVisualDivider { get; set; }
+	[Reactive] public bool IsVisualDivider { get; set; }
+	[Reactive] public string VisualDividerId { get; set; }
+	[Reactive] public string VisualDividerColor { get; set; } = "#8A6AF1";
+	[Reactive] public bool IsVisualDividerCollapsed { get; set; }
+	[Reactive] public bool IsHiddenByVisualDivider { get; set; }
 
 	[Reactive] public DateTime? LastUpdated { get; set; }
 
@@ -336,7 +345,7 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 			case DivinityOsirisModStatus.SCRIPTS:
 				return "Has Osiris Scripting";
 			case DivinityOsirisModStatus.MODFIXER:
-				return "Has Mod Fixer";
+				return "Contains Legacy Mod Fixer. Legacy Mod Fixer files were detected inside this mod package. This does not mean Mod Fixer must be installed separately.";
 			case DivinityOsirisModStatus.NONE:
 			default:
 				return "";

@@ -130,13 +130,13 @@ public class AppKeys : ReactiveObject
 	public Hotkey CheckForUpdates { get; private set; } = new Hotkey(Key.F7);
 
 	[MenuSettings("Help", "Open Donation Page (Ko-fi)...", Tooltip = "Open https://ko-fi.com/laughingleader to send a tip to the developer")]
-	public Hotkey OpenDonationLink { get; private set; } = new Hotkey(Key.F10);
+	public Hotkey OpenDonationLink { get; private set; } = new Hotkey(Key.None);
 
 	[MenuSettings("Help", "About")]
 	public Hotkey OpenAboutWindow { get; private set; } = new Hotkey(Key.F1);
 
 	[MenuSettings("Help", "Open Home Page (Github)...")]
-	public Hotkey OpenRepositoryPage { get; private set; } = new Hotkey(Key.F11);
+	public Hotkey OpenRepositoryPage { get; private set; } = new Hotkey(Key.None);
 
 	private readonly SourceCache<Hotkey, string> keyMap = new((hk) => hk.ID);
 

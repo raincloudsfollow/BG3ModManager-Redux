@@ -58,7 +58,6 @@
 					<TextBlock Grid.Column="1"
 					    Margin="7,3"
 					    VerticalAlignment="Center"
-					    FontFamily="Segoe UI"
 					    FontSize="12"
 					    FontWeight="SemiBold"
 					    Foreground="{DynamicResource ReduxTextPrimaryBrush}"
@@ -100,7 +99,6 @@
 						<TextBlock Grid.Column="1"
 						    Margin="5,0,5,0"
 						    VerticalAlignment="Center"
-						    FontFamily="Segoe UI"
 						    FontSize="12"
 						    FontWeight="SemiBold"
 						    Foreground="{DynamicResource ReduxTextPrimaryBrush}" />

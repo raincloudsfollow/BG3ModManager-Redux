@@ -20,7 +20,7 @@
     Title="{Binding Title}"
     Width="1600"
     Height="800"
-	FontFamily="{DynamicResource ReduxFontFamily}"
+	FontFamily="{DynamicResource Redux.FontFamily.UI}"
 	FontWeight="Medium"
 	TextOptions.TextFormattingMode="Display"
 	TextOptions.TextRenderingMode="ClearType"
@@ -39,6 +39,7 @@
 			</ResourceDictionary.MergedDictionaries>
 			<Style TargetType="{x:Type xc:MessageBox}">
 				<Setter Property="Width" Value="600" />
+				<Setter Property="FontFamily" Value="{DynamicResource Redux.FontFamily.UI}" />
 				<Setter Property="Background" Value="{DynamicResource {x:Static adonisUI:Brushes.Layer0BackgroundBrush}}" />
 				<Setter Property="ButtonRegionBackground" Value="{DynamicResource {x:Static adonisUI:Brushes.Layer0BackgroundBrush}}" />
 				<Setter Property="BorderBrush" Value="{DynamicResource {x:Static adonisUI:Brushes.Layer1BorderBrush}}" />

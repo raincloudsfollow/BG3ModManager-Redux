@@ -9,6 +9,7 @@ using DivinityModManager.Util.ScreenReader;
 using DivinityModManager.ViewModels;
 
 using System.Data;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
@@ -29,6 +30,40 @@ public partial class MainViewControl : MainViewControlViewBase
 
 	public static readonly SolidColorBrush MessageBoxDefaultBackgroundBrush = new(Color.FromRgb(78, 56, 201));
 	public static readonly SolidColorBrush MessageBoxErrorBackgroundBrush = new(Color.FromRgb(219, 40, 40));
+
+	private void QuickLinksButton_Click(object sender, RoutedEventArgs e)
+	{
+		if (sender is Button button && button.ContextMenu != null)
+		{
+			button.ContextMenu.PlacementTarget = button;
+			button.ContextMenu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+			button.ContextMenu.IsOpen = true;
+		}
+	}
+
+	private void OpenBg3Nexus_Click(object sender, RoutedEventArgs e) => ProcessHelper.TryOpenUrl(DivinityApp.URL_BG3_NEXUS);
+	private void OpenScriptExtenderRepo_Click(object sender, RoutedEventArgs e) => ProcessHelper.TryOpenUrl(DivinityApp.URL_EXTENDER_REPO);
+	private void OpenReduxRepo_Click(object sender, RoutedEventArgs e) => ProcessHelper.TryOpenUrl(DivinityApp.URL_REDUX_REPO);
+
+	private void OpenModsFolderQuickLink_Click(object sender, RoutedEventArgs e)
+	{
+		ProcessHelper.TryOpenPath(ViewModel.PathwayData.AppDataModsPath, Directory.Exists);
+	}
+
+	private void OpenSaveGamesFolder_Click(object sender, RoutedEventArgs e)
+	{
+		var saveGamesPath = ViewModel.SelectedProfile?.Folder == null
+			? null
+			: Path.Combine(ViewModel.SelectedProfile.Folder, "Savegames", "Story");
+		if (!String.IsNullOrWhiteSpace(saveGamesPath) && Directory.Exists(saveGamesPath))
+		{
+			ProcessHelper.TryOpenPath(saveGamesPath, Directory.Exists);
+		}
+		else
+		{
+			ViewModel.ShowAlert("The selected profile's save games folder could not be found.", AlertType.Warning);
+		}
+	}
 
 	private void RegisterKeyBindings()
 	{
@@ -79,6 +114,15 @@ public partial class MainViewControl : MainViewControlViewBase
 			if (String.IsNullOrEmpty(key.DisplayName))
 				key.DisplayName = menuSettings.DisplayName;
 
+			// Redux consolidates folder navigation into Quick Links. Donation/project
+			// destinations live under Credits and Quick Links, while their hotkeys remain active.
+			if (menuSettings.Parent.Equals("Go", StringComparison.OrdinalIgnoreCase) ||
+				prop.Name == nameof(AppKeys.OpenDonationLink) ||
+				prop.Name == nameof(AppKeys.OpenRepositoryPage))
+			{
+				continue;
+			}
+
 			if (!menuItems.TryGetValue(menuSettings.Parent, out MenuItem parentMenuItem))
 			{
 				parentMenuItem = new MenuItem
@@ -120,6 +164,24 @@ public partial class MainViewControl : MainViewControlViewBase
 			}
 
 			menuItems.Add(prop.Name, newEntry);
+		}
+
+		// Keep attribution available without dedicating a second top-level menu to it.
+		if (menuItems.TryGetValue("Help", out var helpMenuItem))
+		{
+			helpMenuItem.Items.Add(new Separator());
+			var creditsMenu = new MenuItem { Header = "Credits & Attribution" };
+			creditsMenu.Items.Add(new MenuItem
+			{
+				Header = "Original BG3 Mod Manager on GitHub",
+				Command = ViewModel.Keys.OpenRepositoryPage.Command
+			});
+			creditsMenu.Items.Add(new MenuItem
+			{
+				Header = "Support LaughingLeader on Ko-fi",
+				Command = ViewModel.Keys.OpenDonationLink.Command
+			});
+			helpMenuItem.Items.Add(creditsMenu);
 		}
 	}
 

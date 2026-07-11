@@ -8,6 +8,7 @@
 	Title="LeaderLibSettingsWindow"
 	Width="800"
 	Height="450"
+	FontFamily="{DynamicResource Redux.FontFamily.UI}"
 	mc:Ignorable="d">
 	<Grid />
 </Window>

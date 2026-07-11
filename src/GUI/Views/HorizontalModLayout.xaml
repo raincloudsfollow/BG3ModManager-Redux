@@ -32,6 +32,12 @@
 				<Setter Property="dd:DragDrop.DragDirectlySelectedOnly" Value="True" />
 				<Setter Property="dd:DragDrop.IsDragSource" Value="True" />
 				<Setter Property="dd:DragDrop.IsDropTarget" Value="True" />
+				<Setter Property="dd:DragDrop.DropTargetAdornerBrush" Value="{DynamicResource ReduxAccentBrush}" />
+				<Setter Property="dd:DragDrop.DropTargetAdornerPen">
+					<Setter.Value>
+						<Pen Brush="{DynamicResource ReduxAccentBrush}" Thickness="2" />
+					</Setter.Value>
+				</Setter>
 			</Style>
 			<Style x:Key="ModSectionCard" TargetType="{x:Type Border}">
 				<Setter Property="Background" Value="{DynamicResource ReduxSurfaceBrush}" />
@@ -44,28 +50,91 @@
 				<Setter Property="FontSize" Value="14" />
 				<Setter Property="FontWeight" Value="SemiBold" />
 			</Style>
+			<Style x:Key="ModCategoryListItemStyle" TargetType="{x:Type ListBoxItem}">
+				<Setter Property="Margin" Value="0,1" />
+				<Setter Property="Padding" Value="10,7" />
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderBrush" Value="Transparent" />
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="Cursor" Value="Hand" />
+				<Setter Property="FocusVisualStyle" Value="{x:Null}" />
+				<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+				<Setter Property="Template">
+					<Setter.Value>
+						<ControlTemplate TargetType="{x:Type ListBoxItem}">
+							<Border x:Name="CategorySurface"
+								Padding="{TemplateBinding Padding}"
+								Background="{TemplateBinding Background}"
+								BorderBrush="{TemplateBinding BorderBrush}"
+								BorderThickness="{TemplateBinding BorderThickness}"
+								CornerRadius="6">
+								<ContentPresenter />
+							</Border>
+							<ControlTemplate.Triggers>
+								<Trigger Property="IsMouseOver" Value="True">
+									<Setter TargetName="CategorySurface" Property="Background" Value="{Binding SoftColor}" />
+									<Setter TargetName="CategorySurface" Property="BorderBrush" Value="{Binding Color}" />
+								</Trigger>
+								<Trigger Property="IsSelected" Value="True">
+									<Setter TargetName="CategorySurface" Property="Background" Value="{Binding SoftColor}" />
+									<Setter TargetName="CategorySurface" Property="BorderBrush" Value="{Binding Color}" />
+								</Trigger>
+							</ControlTemplate.Triggers>
+						</ControlTemplate>
+					</Setter.Value>
+				</Setter>
+			</Style>
 			<Style x:Key="ModDetailsToggleStyle" TargetType="{x:Type ToggleButton}">
+				<Setter Property="Width" Value="30" />
+				<Setter Property="Height" Value="28" />
 				<Setter Property="Background" Value="Transparent" />
 				<Setter Property="BorderThickness" Value="0" />
 				<Setter Property="Cursor" Value="Hand" />
 				<Setter Property="FocusVisualStyle" Value="{x:Null}" />
-				<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
+				<Setter Property="Foreground" Value="{DynamicResource ReduxTextSecondaryBrush}" />
 				<Setter Property="Template">
 					<Setter.Value>
 						<ControlTemplate TargetType="{x:Type ToggleButton}">
-							<Border Padding="8,3" Background="Transparent" CornerRadius="4">
-								<TextBlock x:Name="ToggleGlyph"
-									FontFamily="Segoe UI Symbol"
-									FontSize="16"
-									Foreground="{TemplateBinding Foreground}"
-									Text="⌃" />
+							<Border x:Name="ToggleSurface" Padding="6,2" Background="Transparent" CornerRadius="4">
+								<Path x:Name="ToggleGlyph"
+									Width="12" Height="7"
+									Data="M 0,7 L 6,1 L 12,7"
+									Stroke="{TemplateBinding Foreground}"
+									StrokeEndLineCap="Round"
+									StrokeLineJoin="Round"
+									StrokeStartLineCap="Round"
+									StrokeThickness="1.5"
+									Stretch="Fill" />
 							</Border>
 							<ControlTemplate.Triggers>
 								<Trigger Property="IsChecked" Value="False">
-									<Setter TargetName="ToggleGlyph" Property="Text" Value="⌄" />
+									<Setter TargetName="ToggleGlyph" Property="Data" Value="M 0,1 L 6,7 L 12,1" />
 								</Trigger>
 								<Trigger Property="IsMouseOver" Value="True">
-									<Setter Property="Foreground" Value="{DynamicResource ReduxAccentBrush}" />
+									<Setter TargetName="ToggleSurface" Property="Background" Value="{DynamicResource ReduxAccentSoftBrush}" />
+									<Setter Property="Foreground" Value="{DynamicResource ReduxAccentHoverBrush}" />
+								</Trigger>
+							</ControlTemplate.Triggers>
+						</ControlTemplate>
+					</Setter.Value>
+				</Setter>
+			</Style>
+			<Style x:Key="CategoryPanelToggleStyle" TargetType="{x:Type ToggleButton}">
+				<Setter Property="Background" Value="Transparent" />
+				<Setter Property="BorderThickness" Value="0" />
+				<Setter Property="Cursor" Value="Hand" />
+				<Setter Property="FocusVisualStyle" Value="{x:Null}" />
+				<Setter Property="Foreground" Value="{DynamicResource ReduxTextSecondaryBrush}" />
+				<Setter Property="Template">
+					<Setter.Value>
+						<ControlTemplate TargetType="{x:Type ToggleButton}">
+							<Border x:Name="ToggleSurface" Padding="6,2" Background="Transparent" CornerRadius="4">
+								<ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+							</Border>
+							<ControlTemplate.Triggers>
+								<Trigger Property="IsMouseOver" Value="True">
+									<Setter TargetName="ToggleSurface" Property="Background" Value="{DynamicResource ReduxAccentSoftBrush}" />
+									<Setter Property="Foreground" Value="{DynamicResource ReduxAccentHoverBrush}" />
 								</Trigger>
 							</ControlTemplate.Triggers>
 						</ControlTemplate>
@@ -150,6 +219,17 @@
 				<Setter Property="BorderThickness" Value="1" />
 				<Setter Property="CornerRadius" Value="6" />
 			</Style>
+			<Style x:Key="ModDetailsLegacyStatusChipStyle" BasedOn="{StaticResource ModDetailsMetadataChipStyle}" TargetType="{x:Type Border}">
+				<Setter Property="Background" Value="{DynamicResource ReduxWarningSoftBrush}" />
+				<Setter Property="BorderBrush" Value="{DynamicResource ReduxWarningBrush}" />
+			</Style>
+			<Style x:Key="ModDetailsAuthorChipStyle" BasedOn="{StaticResource ModDetailsMetadataChipStyle}" TargetType="{x:Type Border}">
+				<Style.Triggers>
+					<DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.MODIO}">
+						<Setter Property="ToolTip" Value="mod.io's user ID system does not provide Redux with enough reliable information to automatically open the author's direct profile. Use the mod.io mod page instead." />
+					</DataTrigger>
+				</Style.Triggers>
+			</Style>
 			<Style x:Key="ModDetailsSourceButtonStyle" TargetType="{x:Type Button}">
 				<Setter Property="Height" Value="27" />
 				<Setter Property="Margin" Value="0,0,6,5" />
@@ -174,8 +254,7 @@
 							</Border>
 							<ControlTemplate.Triggers>
 								<Trigger Property="IsMouseOver" Value="True">
-									<Setter TargetName="SourceButtonSurface" Property="Background" Value="{DynamicResource ReduxSelectionBrush}" />
-									<Setter TargetName="SourceButtonSurface" Property="BorderBrush" Value="{DynamicResource ReduxAccentHoverBrush}" />
+									<Setter TargetName="SourceButtonSurface" Property="Opacity" Value="0.78" />
 								</Trigger>
 								<Trigger Property="IsPressed" Value="True">
 									<Setter TargetName="SourceButtonSurface" Property="Opacity" Value="0.75" />
@@ -184,7 +263,37 @@
 						</ControlTemplate>
 					</Setter.Value>
 				</Setter>
+				<Style.Triggers>
+					<DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.NEXUSMODS}">
+						<Setter Property="Background" Value="#22F9A332" />
+						<Setter Property="BorderBrush" Value="#F9A332" />
+						<Setter Property="Foreground" Value="#F9A332" />
+					</DataTrigger>
+					<DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.MODIO}">
+						<Setter Property="Background" Value="#2205C2D8" />
+						<Setter Property="BorderBrush" Value="#05C2D8" />
+						<Setter Property="Foreground" Value="#05C2D8" />
+					</DataTrigger>
+				</Style.Triggers>
 			</Style>
+			<DataTemplate x:Key="PlatformAuthorButtonTemplate" DataType="{x:Type data:DivinityModData}">
+				<StackPanel Orientation="Horizontal">
+					<ContentControl Margin="0,0,6,0" Content="{Binding}" ContentTemplate="{StaticResource PlatformIconPresenterTemplate}" />
+					<TextBlock VerticalAlignment="Center" Text="{Binding Metadata.AuthorLabel}" />
+				</StackPanel>
+			</DataTemplate>
+			<DataTemplate x:Key="PlatformSourceButtonTemplate" DataType="{x:Type data:DivinityModData}">
+				<StackPanel Orientation="Horizontal">
+					<ContentControl Margin="0,0,6,0" Content="{Binding}" ContentTemplate="{StaticResource PlatformIconPresenterTemplate}" />
+					<TextBlock VerticalAlignment="Center" Text="{Binding Metadata.SourcePageButtonLabel}" />
+				</StackPanel>
+			</DataTemplate>
+			<DataTemplate x:Key="PlatformChangelogButtonTemplate" DataType="{x:Type data:DivinityModData}">
+				<StackPanel Orientation="Horizontal">
+					<ContentControl Margin="0,0,6,0" Content="{Binding}" ContentTemplate="{StaticResource PlatformIconPresenterTemplate}" />
+					<TextBlock VerticalAlignment="Center" Text="{Binding Metadata.ChangelogButtonLabel}" />
+				</StackPanel>
+			</DataTemplate>
 			<DataTemplate x:Key="ModDetailsOverviewTemplate" DataType="{x:Type data:DivinityModData}">
 				<Grid Margin="14,10">
 					<Grid.ColumnDefinitions>
@@ -290,74 +399,30 @@
 							</Grid>
 							<Border Grid.Row="1"
 								Margin="6,0,6,6"
-								Background="{DynamicResource ReduxSurfaceMutedBrush}"
-								BorderBrush="{DynamicResource ReduxBorderBrush}"
 								BorderThickness="1"
-								CornerRadius="5">
+								CornerRadius="8">
+								<Border.Style><Style TargetType="Border">
+									<Setter Property="Background" Value="#168F879E" /><Setter Property="BorderBrush" Value="#668F879E" />
+									<Style.Triggers>
+										<DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.NEXUSMODS}"><Setter Property="Background" Value="#22F9A332" /><Setter Property="BorderBrush" Value="#F9A332" /></DataTrigger>
+										<DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.MODIO}"><Setter Property="Background" Value="#2205C2D8" /><Setter Property="BorderBrush" Value="#05C2D8" /></DataTrigger>
+									</Style.Triggers>
+								</Style></Border.Style>
 								<StackPanel HorizontalAlignment="Center"
 									VerticalAlignment="Center"
 									Orientation="Horizontal">
-									<Grid Width="14"
-										Height="14"
-										Margin="0,0,5,0"
-										VerticalAlignment="Center">
-										<Grid.Style>
-											<Style TargetType="{x:Type Grid}">
-												<Setter Property="Visibility" Value="Collapsed" />
-												<Style.Triggers>
-													<DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.MODIO}">
-														<Setter Property="Visibility" Value="Visible" />
-													</DataTrigger>
-												</Style.Triggers>
-											</Style>
-										</Grid.Style>
-										<Path Margin="1"
-											Data="M 4,0 L 10,0 14,4 14,10 10,14 4,14 0,10 0,4 Z"
-											Fill="Transparent"
-											Stroke="{DynamicResource ReduxCyanBrush}"
-											StrokeLineJoin="Round"
-											StrokeThickness="1.6"
-											Stretch="Uniform" />
-										<Ellipse Width="3.5" Height="3.5" Fill="{DynamicResource ReduxCyanBrush}" />
-									</Grid>
-									<Grid Width="14"
-										Height="14"
-										Margin="0,0,5,0"
-										VerticalAlignment="Center">
-										<Grid.Style>
-											<Style TargetType="{x:Type Grid}">
-												<Setter Property="Visibility" Value="Collapsed" />
-												<Style.Triggers>
-													<DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.NEXUSMODS}">
-														<Setter Property="Visibility" Value="Visible" />
-													</DataTrigger>
-												</Style.Triggers>
-											</Style>
-										</Grid.Style>
-										<Path Margin="1"
-											Data="M 7,0 L 14,7 7,14 0,7 Z"
-											Fill="Transparent"
-											Stroke="{DynamicResource ReduxWarningBrush}"
-											StrokeLineJoin="Round"
-											StrokeThickness="1.6"
-											Stretch="Uniform" />
-										<Path Width="5.5"
-											Height="5.5"
-											Data="M 2.75,0 L 5.5,2.75 2.75,5.5 0,2.75 Z"
-											Fill="{DynamicResource ReduxWarningBrush}"
-											Stretch="Uniform" />
-									</Grid>
+									<ContentControl Margin="0,0,5,0" Content="{Binding}" ContentTemplate="{StaticResource PlatformIconPresenterTemplate}" Visibility="{Binding Metadata.OnlineSourceVisibility}" />
 									<TextBlock VerticalAlignment="Center"
 										FontSize="10"
 										FontWeight="SemiBold">
 									<TextBlock.Style>
 										<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
 											<Setter Property="Foreground" Value="{DynamicResource ReduxTextSecondaryBrush}" />
-											<Setter Property="Text" Value="LOCAL METADATA" />
+											<Setter Property="Text" Value="Local" />
 											<Style.Triggers>
 										<DataTrigger Binding="{Binding Metadata.OnlineSourceVisibility}" Value="Visible">
-											<Setter Property="Foreground" Value="{DynamicResource ReduxAccentHoverBrush}" />
-											<Setter Property="Text" Value="{Binding Metadata.SourceBadgeLabel}" />
+											<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
+											<Setter Property="Text" Value="{Binding Metadata.SourceLabel}" />
 												</DataTrigger>
 											</Style.Triggers>
 										</Style>
@@ -374,11 +439,85 @@
 							<RowDefinition Height="Auto" />
 							<RowDefinition Height="*" />
 						</Grid.RowDefinitions>
-						<TextBlock FontSize="20"
-							FontWeight="Bold"
-							Foreground="{DynamicResource ReduxTextPrimaryBrush}"
-							Text="{Binding Metadata.Title}"
-							TextTrimming="CharacterEllipsis" />
+						<StackPanel>
+							<StackPanel Orientation="Horizontal">
+								<TextBlock FontSize="20"
+									FontWeight="Bold"
+									Foreground="{DynamicResource ReduxTextPrimaryBrush}"
+									Text="{Binding Metadata.Title}"
+									TextTrimming="CharacterEllipsis" />
+								<ContentControl Margin="9,0,0,0"
+									VerticalAlignment="Center"
+									Content="{Binding}"
+									ContentTemplate="{StaticResource ModCategoryTemplate}" />
+							</StackPanel>
+							<WrapPanel Margin="0,5,0,0">
+								<Border ToolTip="Legacy Mod Fixer files were detected inside this mod package. This does not mean Mod Fixer must be installed separately.">
+									<Border.Style>
+										<Style BasedOn="{StaticResource ModDetailsLegacyStatusChipStyle}" TargetType="{x:Type Border}">
+											<Setter Property="Visibility" Value="Collapsed" />
+											<Style.Triggers>
+												<DataTrigger Binding="{Binding OsirisModStatus}" Value="{x:Static dapp:DivinityOsirisModStatus.MODFIXER}">
+													<Setter Property="Visibility" Value="Visible" />
+												</DataTrigger>
+											</Style.Triggers>
+										</Style>
+									</Border.Style>
+									<TextBlock Foreground="{DynamicResource ReduxWarningBrush}" FontWeight="SemiBold" Text="Contains Legacy Mod Fixer" />
+								</Border>
+								<Border Style="{StaticResource ModDetailsLegacyStatusChipStyle}"
+									ToolTip="This package contains files that directly override built-in game files. Those overrides remain active while the .pak exists in the Mods folder."
+									Visibility="{Binding IsForceLoaded, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
+									<TextBlock Foreground="{DynamicResource ReduxWarningBrush}" FontWeight="SemiBold" Text="Overrides Game Files" />
+								</Border>
+								<Border ToolTip="This is an Always Loaded package, not a normal load-order entry. It usually is not written to modsettings.lsx.">
+									<Border.Style>
+										<Style BasedOn="{StaticResource ModDetailsLegacyStatusChipStyle}" TargetType="{x:Type Border}">
+											<Setter Property="Visibility" Value="Collapsed" />
+											<Style.Triggers>
+												<MultiDataTrigger>
+													<MultiDataTrigger.Conditions>
+														<Condition Binding="{Binding IsForceLoaded}" Value="True" />
+														<Condition Binding="{Binding IsForceLoadedMergedMod}" Value="False" />
+														<Condition Binding="{Binding ForceAllowInLoadOrder}" Value="False" />
+													</MultiDataTrigger.Conditions>
+													<Setter Property="Visibility" Value="Visible" />
+												</MultiDataTrigger>
+											</Style.Triggers>
+										</Style>
+									</Border.Style>
+									<TextBlock Foreground="{DynamicResource ReduxWarningBrush}" FontWeight="SemiBold" Text="Always Loaded" />
+								</Border>
+								<Border ToolTip="This mod has a normal load-order entry and also contains direct file overrides. Disabling its load-order entry may not disable those overrides.">
+									<Border.Style>
+										<Style BasedOn="{StaticResource ModDetailsLegacyStatusChipStyle}" TargetType="{x:Type Border}">
+											<Setter Property="Visibility" Value="Collapsed" />
+											<Style.Triggers>
+												<MultiDataTrigger>
+													<MultiDataTrigger.Conditions>
+														<Condition Binding="{Binding IsForceLoadedMergedMod}" Value="True" />
+														<Condition Binding="{Binding ForceAllowInLoadOrder}" Value="False" />
+													</MultiDataTrigger.Conditions>
+													<Setter Property="Visibility" Value="Visible" />
+												</MultiDataTrigger>
+											</Style.Triggers>
+										</Style>
+									</Border.Style>
+									<TextBlock Foreground="{DynamicResource ReduxWarningBrush}" FontWeight="SemiBold" Text="Contains File Overrides" />
+								</Border>
+								<Border ToolTip="This Always Loaded package is also being treated as a load-order entry.">
+									<Border.Style>
+										<Style BasedOn="{StaticResource ModDetailsLegacyStatusChipStyle}" TargetType="{x:Type Border}">
+											<Setter Property="Visibility" Value="Collapsed" />
+											<Style.Triggers>
+												<DataTrigger Binding="{Binding ForceAllowInLoadOrder}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger>
+											</Style.Triggers>
+										</Style>
+									</Border.Style>
+									<TextBlock Foreground="{DynamicResource ReduxWarningBrush}" FontWeight="SemiBold" Text="Always Loaded + Load Order Entry" />
+								</Border>
+							</WrapPanel>
+						</StackPanel>
 						<TextBlock Grid.Row="1"
 							Margin="0,2,0,0"
 							Foreground="{DynamicResource ReduxTextMutedBrush}"
@@ -390,15 +529,23 @@
 							</Border>
 							<Border Style="{StaticResource ModDetailsMetadataChipStyle}">
 								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
-									Text="{Binding Metadata.AuthorLabel}" />
-							</Border>
-							<Border Style="{StaticResource ModDetailsMetadataChipStyle}">
-								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
 									Text="{Binding Metadata.UpdatedLabel}" />
 							</Border>
+							<Border Style="{StaticResource ModDetailsAuthorChipStyle}" Visibility="{Binding Metadata.LocalAuthorVisibility}">
+								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+									Text="{Binding Metadata.AuthorLabel}" />
+							</Border>
+							<Button Command="{Binding Path=OpenURLCommand, Source={x:Static dapp:DivinityApp.Commands}}"
+								CommandParameter="{Binding Metadata.AuthorPageUrl}"
+								Content="{Binding}"
+								ContentTemplate="{StaticResource PlatformAuthorButtonTemplate}"
+								Style="{StaticResource ModDetailsSourceButtonStyle}"
+								ToolTip="Open the mod author's profile"
+								Visibility="{Binding Metadata.AuthorPageVisibility}" />
 							<Button Command="{Binding Path=OpenModSourcePageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
 								CommandParameter="{Binding}"
-								Content="{Binding Metadata.SourcePageButtonLabel}"
+								Content="{Binding}"
+								ContentTemplate="{StaticResource PlatformSourceButtonTemplate}"
 								Style="{StaticResource ModDetailsSourceButtonStyle}"
 								Visibility="{Binding Metadata.OnlineSourceVisibility}" />
 						</WrapPanel>
@@ -525,7 +672,8 @@
 						<Button Grid.Column="1"
 							Command="{Binding Path=OpenModSourcePageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
 							CommandParameter="{Binding}"
-							Content="{Binding Metadata.SourcePageButtonLabel}"
+							Content="{Binding}"
+							ContentTemplate="{StaticResource PlatformSourceButtonTemplate}"
 							Style="{StaticResource ModDetailsSourceButtonStyle}"
 							Visibility="{Binding Metadata.OnlineSourceVisibility}" />
 					</Grid>
@@ -655,7 +803,8 @@
 						<Button Grid.Column="1"
 							Command="{Binding Path=OpenModChangelogPageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
 							CommandParameter="{Binding}"
-							Content="{Binding Metadata.ChangelogButtonLabel}"
+							Content="{Binding}"
+							ContentTemplate="{StaticResource PlatformChangelogButtonTemplate}"
 							Style="{StaticResource ModDetailsSourceButtonStyle}"
 							Visibility="{Binding Metadata.OnlineSourceVisibility}" />
 					</Grid>
@@ -720,12 +869,191 @@
 			<RowDefinition x:Name="ModDetailsRow" Height="0" />
 		</Grid.RowDefinitions>
 		<Grid.ColumnDefinitions>
+			<ColumnDefinition x:Name="CategoriesColumn" Width="220" MinWidth="52" />
+			<ColumnDefinition Width="4" />
 			<ColumnDefinition Width="*" />
 			<ColumnDefinition Width="4" />
 			<ColumnDefinition Width="*" />
 		</Grid.ColumnDefinitions>
-		<Border Grid.Column="0"
+		<Border x:Name="CategoriesPanel" Grid.Column="0"
 			Margin="10,4,5,10"
+			Style="{StaticResource ModSectionCard}">
+			<Border.ContextMenu>
+				<ContextMenu Opened="CategoriesContextMenu_Opened">
+					<MenuItem x:Name="ShowEmptyCategoriesMenuItem"
+						Header="Show categories with 0 mods"
+						IsCheckable="True"
+						Click="ShowEmptyCategoriesMenuItem_Click" />
+					<MenuItem x:Name="SaveCategoryFilterMenuItem"
+						Header="Save filter state between sessions"
+						IsCheckable="True"
+						Click="SaveCategoryFilterMenuItem_Click" />
+					<MenuItem x:Name="DisableNewModIndicatorsMenuItem"
+						Header="Disable new-mod indicators"
+						IsCheckable="True"
+						Click="DisableNewModIndicatorsMenuItem_Click" />
+					<Separator />
+					<MenuItem Header="Add New Custom Category..." Click="AddCustomCategoryMenuItem_Click" />
+					<MenuItem x:Name="ChangeCategoryColorMenuItem" Header="Change Selected Category Color..." Click="ChangeCategoryColorMenuItem_Click" />
+					<Separator />
+					<MenuItem x:Name="EnableCategoriesMenuItem" Header="Enable / Disable Categories" />
+					<MenuItem x:Name="DeleteCustomCategoryMenuItem" Header="Delete Custom Category" />
+				</ContextMenu>
+			</Border.ContextMenu>
+			<Grid>
+				<Grid.RowDefinitions>
+					<RowDefinition Height="Auto" />
+					<RowDefinition Height="1" />
+					<RowDefinition Height="*" />
+				</Grid.RowDefinitions>
+				<Grid>
+					<Grid.Style>
+						<Style TargetType="{x:Type Grid}">
+							<Setter Property="Margin" Value="10,8" />
+							<Style.Triggers>
+								<DataTrigger Binding="{Binding IsCategoriesExpanded}" Value="False">
+									<Setter Property="Margin" Value="3,8" />
+								</DataTrigger>
+							</Style.Triggers>
+						</Style>
+					</Grid.Style>
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition Width="*" />
+						<ColumnDefinition Width="Auto" />
+					</Grid.ColumnDefinitions>
+					<StackPanel VerticalAlignment="Center" Orientation="Horizontal">
+						<StackPanel.Style>
+							<Style TargetType="StackPanel">
+								<Style.Triggers>
+									<DataTrigger Binding="{Binding IsCategoriesExpanded}" Value="False">
+										<Setter Property="Visibility" Value="Collapsed" />
+									</DataTrigger>
+								</Style.Triggers>
+							</Style>
+						</StackPanel.Style>
+						<TextBlock Style="{StaticResource ModSectionTitle}" Text="Categories" />
+					</StackPanel>
+					<ToggleButton Grid.Column="1"
+						Width="30"
+						Height="28"
+						Padding="0"
+						IsChecked="{Binding IsCategoriesExpanded, Mode=TwoWay}"
+						Style="{StaticResource CategoryPanelToggleStyle}"
+						ToolTip="Collapse or expand categories">
+						<TextBlock HorizontalAlignment="Center"
+							VerticalAlignment="Center"
+							FontSize="18"
+							Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType={x:Type ToggleButton}}}">
+							<TextBlock.Style>
+								<Style TargetType="{x:Type TextBlock}">
+									<Setter Property="Text" Value="&#x2039;" />
+									<Style.Triggers>
+										<DataTrigger Binding="{Binding IsCategoriesExpanded}" Value="False">
+											<Setter Property="Text" Value="&#x203A;" />
+										</DataTrigger>
+									</Style.Triggers>
+								</Style>
+							</TextBlock.Style>
+						</TextBlock>
+					</ToggleButton>
+				</Grid>
+				<Border Grid.Row="1" Background="{DynamicResource ReduxBorderBrush}" />
+				<ListBox Grid.Row="2"
+					Margin="6"
+					Padding="0"
+					Background="Transparent"
+					BorderThickness="0"
+					ItemsSource="{Binding ModCategoryFilters}"
+					ItemContainerStyle="{StaticResource ModCategoryListItemStyle}"
+					ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+					SelectedIndex="0"
+					PreviewMouseLeftButtonUp="CategoryListBox_PreviewMouseLeftButtonUp"
+					SelectedValue="{Binding SelectedModCategory, Mode=TwoWay}"
+					SelectedValuePath="Name">
+					<ListBox.Style>
+						<Style TargetType="{x:Type ListBox}">
+							<Setter Property="Visibility" Value="Visible" />
+							<Style.Triggers>
+								<DataTrigger Binding="{Binding IsCategoriesExpanded}" Value="False">
+									<Setter Property="Visibility" Value="Collapsed" />
+								</DataTrigger>
+							</Style.Triggers>
+						</Style>
+					</ListBox.Style>
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="Auto" />
+									<ColumnDefinition Width="Auto" />
+									<ColumnDefinition Width="*" />
+									<ColumnDefinition Width="Auto" />
+								</Grid.ColumnDefinitions>
+								<ContentControl Grid.Column="0" Width="12"
+									Height="12"
+									Margin="0,0,7,0"
+									VerticalAlignment="Center"
+									Content="{Binding}">
+									<ContentControl.ContentTemplate>
+										<DataTemplate>
+											<Border Width="9" Height="9" CornerRadius="5" BorderThickness="1.5"
+												Background="{Binding Color}" BorderBrush="{Binding Color}" />
+										</DataTemplate>
+									</ContentControl.ContentTemplate>
+								</ContentControl>
+								<TextBlock Grid.Column="1" VerticalAlignment="Center"
+									Foreground="{DynamicResource ReduxTextPrimaryBrush}"
+									Text="{Binding Name}"
+									TextTrimming="CharacterEllipsis" />
+								<Ellipse Grid.Column="2" Width="8" Height="8" Margin="7,0,0,0"
+									Fill="{DynamicResource ReduxSuccessBrush}" ToolTip="New mod detected in this category">
+									<Ellipse.Style><Style TargetType="Ellipse"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding HasNewMods}" Value="True"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></Ellipse.Style>
+								</Ellipse>
+								<Border Grid.Column="3"
+									MinWidth="28"
+									Margin="8,0,0,0"
+									Padding="6,2"
+									Background="{DynamicResource ReduxSurfaceMutedBrush}"
+									CornerRadius="9">
+									<TextBlock HorizontalAlignment="Center"
+										FontSize="11"
+										Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+										Text="{Binding Count}" />
+								</Border>
+							</Grid>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+				<TextBlock Grid.Row="2"
+					HorizontalAlignment="Center"
+					VerticalAlignment="Center"
+					FontSize="12"
+					FontWeight="SemiBold"
+					Foreground="{DynamicResource ReduxTextMutedBrush}"
+					IsHitTestVisible="False"
+					Text="CATEGORIES">
+					<TextBlock.LayoutTransform>
+						<RotateTransform Angle="-90" />
+					</TextBlock.LayoutTransform>
+					<TextBlock.Style>
+						<Style TargetType="{x:Type TextBlock}">
+							<Setter Property="Visibility" Value="Collapsed" />
+							<Style.Triggers>
+								<DataTrigger Binding="{Binding IsCategoriesExpanded}" Value="False">
+									<Setter Property="Visibility" Value="Visible" />
+								</DataTrigger>
+							</Style.Triggers>
+						</Style>
+					</TextBlock.Style>
+				</TextBlock>
+			</Grid>
+		</Border>
+		<GridSplitter x:Name="CategoriesGridSplitter" Grid.Column="1"
+			Width="4"
+			HorizontalAlignment="Stretch"
+			VerticalAlignment="Stretch" />
+		<Border Grid.Column="2"
+			Margin="5,4,5,10"
 			Style="{StaticResource ModSectionCard}">
 		<Grid HorizontalAlignment="Stretch">
 			<Grid.RowDefinitions>
@@ -803,13 +1131,17 @@
 					behavior:ScreenReaderHelperBehavior.Name="Active Mods"
 					dd:DragDrop.DragHandler="{Binding DragHandler}"
 					dd:DragDrop.DropHandler="{Binding DropHandler}"
+					ContextMenuOpening="ModListView_ContextMenuOpening"
 					GridViewColumnHeader.Click="ListView_Click"
+					GridViewColumnHeader.PreviewMouseLeftButtonUp="ListViewColumnHeader_PreviewMouseLeftButtonUp"
 					GridViewColumnHeader.PreviewMouseRightButtonUp="ListViewColumnHeader_RightClick"
 					ItemContainerStyle="{StaticResource ListViewItemMouseEvents}"
 					Style="{StaticResource ModOrderListViewWithDrag}"
 					View="{DynamicResource ModGridView}"
 					VirtualizingPanel.IsVirtualizing="True"
-					VirtualizingPanel.VirtualizationMode="Recycling" />
+					VirtualizingPanel.VirtualizationMode="Recycling">
+					<c:ModListView.ContextMenu><ContextMenu /></c:ModListView.ContextMenu>
+				</c:ModListView>
 				<GridSplitter x:Name="ActiveModListViewGridSplitter"
 					Grid.Row="1"
 					Height="4"
@@ -821,7 +1153,10 @@
 						<RowDefinition Height="Auto" />
 						<RowDefinition Height="*" />
 					</Grid.RowDefinitions>
-					<TextBlock HorizontalAlignment="Center" FontSize="16" Text="Overrides" />
+					<TextBlock HorizontalAlignment="Center"
+						FontSize="16"
+						Text="Always Loaded"
+						ToolTip="These packages override built-in game files directly and are not normal load-order entries." />
 					<c:ModListView x:Name="ForceLoadedModsListView"
 						Grid.Row="1"
 						MaxHeight="99999"
@@ -834,11 +1169,11 @@
 			</Grid>
 		</Grid>
 		</Border>
-		<GridSplitter Grid.Column="1"
+		<GridSplitter Grid.Column="3"
 			Width="4"
 			HorizontalAlignment="Stretch"
 			VerticalAlignment="Stretch" />
-		<Border Grid.Column="2"
+		<Border Grid.Column="4"
 			Margin="5,4,10,10"
 			Style="{StaticResource ModSectionCard}">
 		<Grid x:Name="InactiveModListGrid" HorizontalAlignment="Stretch">
@@ -914,18 +1249,22 @@
 				behavior:ScreenReaderHelperBehavior.Name="Inactive Mods"
 				dd:DragDrop.DragHandler="{Binding DragHandler}"
 				dd:DragDrop.DropHandler="{Binding DropHandler}"
+				ContextMenuOpening="ModListView_ContextMenuOpening"
 				GridViewColumnHeader.Click="ListView_Click"
+				GridViewColumnHeader.PreviewMouseLeftButtonUp="ListViewColumnHeader_PreviewMouseLeftButtonUp"
 				GridViewColumnHeader.PreviewMouseRightButtonUp="ListViewColumnHeader_RightClick"
 				ItemContainerStyle="{StaticResource ListViewItemMouseEvents}"
 				Style="{StaticResource ModOrderListViewWithDrag}"
 				View="{DynamicResource InactiveModGridView}"
 				VirtualizingPanel.IsVirtualizing="True"
-				VirtualizingPanel.VirtualizationMode="Recycling" />
+				VirtualizingPanel.VirtualizationMode="Recycling">
+				<c:ModListView.ContextMenu><ContextMenu /></c:ModListView.ContextMenu>
+			</c:ModListView>
 		</Grid>
 		</Border>
 		<GridSplitter x:Name="ModDetailsGridSplitter"
 			Grid.Row="1"
-			Grid.ColumnSpan="3"
+			Grid.ColumnSpan="5"
 			Height="6"
 			HorizontalAlignment="Stretch"
 			VerticalAlignment="Stretch"
@@ -1010,7 +1349,7 @@
 		</GridSplitter>
 		<Border x:Name="ModDetailsPanel"
 			Grid.Row="2"
-			Grid.ColumnSpan="3"
+			Grid.ColumnSpan="5"
 			Margin="10,0,10,10"
 			Visibility="Collapsed">
 			<Border.Style>

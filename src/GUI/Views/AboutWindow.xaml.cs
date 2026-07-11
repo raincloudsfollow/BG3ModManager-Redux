@@ -8,7 +8,7 @@ public class AboutWindowViewModel : ReactiveObject
 
 	public AboutWindowViewModel()
 	{
-		Title = "About";
+		Title = "BG3 Mod Manager Redux";
 	}
 }
 
@@ -26,7 +26,6 @@ public partial class AboutWindow : AboutWindowBase
 		this.WhenActivated(d =>
 		{
 			d(this.OneWayBind(ViewModel, vm => vm.Title, v => v.TitleText.Text));
-			d(this.OneWayBind(ViewModel, vm => vm.Title, v => v.Title));
 		});
 	}
 }

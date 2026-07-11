@@ -7,10 +7,10 @@ namespace DivinityModManager;
 [JsonConverter(typeof(StringEnumConverter))]
 public enum DivinityGameLaunchWindowAction
 {
-	[Description("None")]
+	[Description("Stay Open")]
 	None,
 	[Description("Minimize")]
 	Minimize,
-	[Description("Close")]
+	[Description("Close Manager")]
 	Close
 }

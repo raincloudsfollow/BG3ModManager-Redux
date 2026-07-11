@@ -23,7 +23,7 @@
     Title="Preferences"
     Width="800"
     Height="900"
-	FontFamily="{DynamicResource ReduxFontFamily}"
+	FontFamily="{DynamicResource Redux.FontFamily.UI}"
 	FontWeight="Medium"
 	TextOptions.TextFormattingMode="Display"
 	TextOptions.TextRenderingMode="ClearType"

@@ -163,6 +163,9 @@ public class MainWindowViewModel : BaseHistoryViewModel, IActivatableViewModel, 
 
 	private readonly ObservableCollectionExtended<DivinityModData> _inactiveMods = new();
 	public ObservableCollectionExtended<DivinityModData> InactiveMods => _inactiveMods;
+	public ObservableCollectionExtended<DivinityModData> DisplayActiveMods { get; } = new();
+	public ObservableCollectionExtended<DivinityModData> DisplayInactiveMods { get; } = new();
+	private bool _updatingVisualModLists;
 
 	private readonly ReadOnlyObservableCollection<DivinityModData> _forceLoadedMods;
 	public ReadOnlyObservableCollection<DivinityModData> ForceLoadedMods => _forceLoadedMods;
@@ -195,6 +198,37 @@ public class MainWindowViewModel : BaseHistoryViewModel, IActivatableViewModel, 
 
 	[Reactive] public string ActiveModFilterText { get; set; }
 	[Reactive] public string InactiveModFilterText { get; set; }
+
+	public const string AllModsCategory = "All Mods";
+	public const string UncategorizedModsCategory = "Uncategorized";
+	public ObservableCollectionExtended<ModCategoryFilterItem> ModCategoryFilters { get; } = new();
+	[Reactive] public string SelectedModCategory { get; set; } = AllModsCategory;
+	[Reactive] public bool IsCategoriesExpanded { get; set; } = true;
+
+	private static readonly (string Name, string[] Keywords)[] ReduxCategoryRules =
+	[
+		("User Interface", ["user interface", "interface", "improvedui", "ui", "hud", "menu", "hotbar"]),
+		("Classes", ["class", "subclass", "multiclass"]),
+		("Cosmetics", ["cosmetic", "hair", "hairstyle", "face", "head", "makeup", "tattoo", "appearance", "dress", "outfit", "dye"]),
+		("Libraries", ["library", "framework", "dependency", "communitylibrary", "api"]),
+		("Patches", ["patch", "compatibility", "hotfix", "bugfix"]),
+		("Overhauls", ["overhaul", "total conversion"]),
+		("Companions", ["companion", "astarion", "gale", "karlach", "laezel", "shadowheart", "wyll", "minthara", "halsin", "jaheira", "minsc"]),
+		("Utilities", ["utility", "tool", "mod fixer", "script extender", "achievement enabler", "native camera"]),
+		("Gameplay", ["gameplay", "balance", "combat", "spell", "feat", "weapon", "armor", "equipment", "gold", "weight", "carry", "level", "quest", "race", "origin"])
+	];
+	private static readonly Dictionary<string, string> ReduxCategoryDefaultColors = new(StringComparer.OrdinalIgnoreCase)
+	{
+		[AllModsCategory] = "#8A6AF1", [UncategorizedModsCategory] = "#8F879E",
+		["User Interface"] = "#8A6AF1", ["Classes"] = "#3B82F6", ["Cosmetics"] = "#D45A9E",
+		["Libraries"] = "#3FA37A", ["Patches"] = "#71B96B", ["Overhauls"] = "#D66B55",
+		["Companions"] = "#C9963E", ["Utilities"] = "#22B8C5", ["Gameplay"] = "#D7A24B"
+	};
+	private static readonly string[] ReduxCustomCategoryPalette =
+	[
+		"#A855F7", "#06B6D4", "#F97316", "#10B981", "#EC4899", "#EAB308", "#6366F1", "#14B8A6",
+		"#F43F5E", "#84CC16", "#0EA5E9", "#D946EF", "#F59E0B", "#22C55E", "#64748B", "#C084FC"
+	];
 
 	[Reactive] public int SelectedProfileIndex { get; set; }
 
@@ -2371,7 +2405,11 @@ Directory the zip will be extracted to:
 			}
 			finally
 			{
-				RxApp.MainThreadScheduler.Schedule(() => IsRefreshingModUpdates = false);
+				RxApp.MainThreadScheduler.Schedule(() =>
+				{
+					IsRefreshingModUpdates = false;
+					ScheduleRefreshModCategories();
+				});
 			}
 		});
 	}
@@ -2417,6 +2455,10 @@ Directory the zip will be extracted to:
 			catch (Exception ex)
 			{
 				DivinityApp.Log($"Error loading mod.io metadata:\n{ex}");
+			}
+			finally
+			{
+				RxApp.MainThreadScheduler.Schedule(ScheduleRefreshModCategories);
 			}
 		});
 	}
@@ -4482,6 +4524,19 @@ Directory the zip will be extracted to:
 			}
 		}
 
+		// Category selection is a view-only filter. It never changes either source
+		// collection, a mod's Index, or the saved/exported load order.
+		foreach (var mod in modDataList)
+		{
+			if (mod.Visibility == Visibility.Visible && !ModMatchesSelectedCategory(mod))
+			{
+				mod.Visibility = Visibility.Collapsed;
+				mod.IsSelected = false;
+			}
+		}
+
+		totalHidden = modDataList.Count(mod => mod.Visibility != Visibility.Visible);
+
 		if (modDataList == ActiveMods)
 		{
 			TotalActiveModsHidden = totalHidden;
@@ -4490,6 +4545,527 @@ Directory the zip will be extracted to:
 		{
 			TotalInactiveModsHidden = totalHidden;
 		}
+	}
+
+	private bool ModMatchesSelectedCategory(DivinityModData mod)
+	{
+		if (String.IsNullOrWhiteSpace(SelectedModCategory) ||
+			SelectedModCategory.Equals(AllModsCategory, StringComparison.OrdinalIgnoreCase))
+		{
+			return true;
+		}
+
+		if (SelectedModCategory.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase))
+		{
+			return GetEffectiveModCategories(mod).Contains(UncategorizedModsCategory, StringComparer.OrdinalIgnoreCase);
+		}
+
+		return GetEffectiveModCategories(mod).Contains(SelectedModCategory, StringComparer.OrdinalIgnoreCase);
+	}
+
+	private string GetAutomaticModCategory(DivinityModData mod)
+	{
+		var nameSource = String.Join(" ", new[]
+		{
+			mod.Name,
+			mod.DisplayName,
+			mod.Folder,
+			mod.NexusModsData?.Name,
+			mod.ModioData?.Name
+		}.Where(value => !String.IsNullOrWhiteSpace(value))).ToLowerInvariant();
+		var tagSource = String.Join(" ", new[]
+		{
+			String.Join(" ", mod.Tags ?? Enumerable.Empty<string>()),
+			String.Join(" ", mod.ModioData?.Tags?.Select(tag => tag.LocalizedName ?? tag.Name) ?? Enumerable.Empty<string>())
+		}.Where(value => !String.IsNullOrWhiteSpace(value))).ToLowerInvariant();
+		var summarySource = String.Join(" ", new[]
+		{
+			mod.NexusModsData?.Summary,
+			mod.ModioData?.Summary,
+			mod.Description
+		}.Where(value => !String.IsNullOrWhiteSpace(value))).ToLowerInvariant();
+		var descriptionSource = String.Join(" ", new[]
+		{
+			mod.NexusModsData?.Description,
+			mod.ModioData?.Description,
+		}.Where(value => !String.IsNullOrWhiteSpace(value))).ToLowerInvariant();
+
+		var bestMatch = ReduxCategoryRules
+			.Where(category => IsModCategoryEnabled(category.Name))
+			.Select((category, index) => new
+			{
+				category.Name,
+				Index = index,
+				Score = (CategorySourceContainsAny(nameSource, category.Keywords) ? 12 : 0)
+					+ (CategorySourceContainsAny(tagSource, category.Keywords) ? 8 : 0)
+					+ (CategorySourceContainsAny(summarySource, category.Keywords) ? 4 : 0)
+					+ (CategorySourceContainsAny(descriptionSource, category.Keywords) ? 1 : 0)
+			})
+			.OrderByDescending(match => match.Score)
+			.ThenBy(match => match.Index)
+			.FirstOrDefault();
+
+		return bestMatch?.Score > 0 ? bestMatch.Name : UncategorizedModsCategory;
+	}
+
+	private static bool CategorySourceContainsAny(string source, IEnumerable<string> keywords) =>
+		!String.IsNullOrWhiteSpace(source) && keywords.Any(keyword => CategorySourceContains(source, keyword));
+
+	private IReadOnlyList<string> GetEffectiveModCategories(DivinityModData mod)
+	{
+		if (mod != null && !String.IsNullOrWhiteSpace(mod.UUID) &&
+			Settings.ModCategoryAssignments.TryGetValue(mod.UUID, out var categories) && categories?.Count > 0)
+		{
+			var enabledCategories = categories.Where(category => !String.IsNullOrWhiteSpace(category) && IsModCategoryEnabled(category))
+				.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+			if (enabledCategories.Count > 0) return enabledCategories;
+		}
+
+		return new[] { GetAutomaticModCategory(mod) };
+	}
+
+	private string GetCategoryColor(string category)
+	{
+		if (Settings.ModCategoryColors.TryGetValue(category, out var color) &&
+			Regex.IsMatch(color ?? String.Empty, "^#[0-9A-Fa-f]{6}$")) return color.ToUpperInvariant();
+		return ReduxCategoryDefaultColors.TryGetValue(category, out var defaultColor) ? defaultColor : "#8F879E";
+	}
+
+	private string GetNextCustomCategoryColor()
+	{
+		var used = GetAllModCategories().Select(GetCategoryColor).ToHashSet(StringComparer.OrdinalIgnoreCase);
+		return ReduxCustomCategoryPalette.FirstOrDefault(color => !used.Contains(color))
+			?? ReduxCustomCategoryPalette[(Settings.CustomModCategories?.Count ?? 0) % ReduxCustomCategoryPalette.Length];
+	}
+
+	public IReadOnlyList<string> GetAllModCategories() => ReduxCategoryRules
+		.Select(category => category.Name)
+		.Concat(Settings.CustomModCategories ?? Enumerable.Empty<string>())
+		.Distinct(StringComparer.OrdinalIgnoreCase)
+		.OrderBy(category => category, StringComparer.CurrentCultureIgnoreCase)
+		.ToList();
+
+	public IReadOnlyList<string> GetAssignableModCategories() => GetAllModCategories().Where(IsModCategoryEnabled).ToList();
+	public bool IsCustomModCategory(string category) => Settings.CustomModCategories?.Contains(category, StringComparer.OrdinalIgnoreCase) == true;
+
+	public ModListVisualDividerData GetVisualDivider(DivinityModData item) => item?.IsVisualDivider == true
+		? Settings.VisualModListDividers?.FirstOrDefault(entry => entry.Id.Equals(item.VisualDividerId, StringComparison.OrdinalIgnoreCase))
+		: null;
+
+	public void AddVisualDivider(bool activeList, int position, string title, string color)
+	{
+		Settings.VisualModListDividers ??= new List<ModListVisualDividerData>();
+		foreach (var existing in Settings.VisualModListDividers.Where(item => item.IsActiveList == activeList && item.Position >= position))
+			existing.Position++;
+		Settings.VisualModListDividers.Add(new ModListVisualDividerData
+		{
+			Title = title?.Trim() ?? "", Color = color, IsActiveList = activeList, Position = Math.Max(0, position)
+		});
+		RefreshVisualDividers();
+		SaveSettings();
+	}
+
+	public void UpdateVisualDivider(DivinityModData item, string title, string color)
+	{
+		var divider = GetVisualDivider(item);
+		if (divider == null) return;
+		divider.Title = title?.Trim() ?? "";
+		divider.Color = color;
+		RefreshVisualDividers();
+		SaveSettings();
+	}
+
+	public void RemoveVisualDivider(DivinityModData item)
+	{
+		var divider = GetVisualDivider(item);
+		if (divider == null) return;
+		Settings.VisualModListDividers.Remove(divider);
+		RefreshVisualDividers();
+		SaveSettings();
+	}
+
+	public void ToggleVisualDividerCollapsed(DivinityModData item)
+	{
+		var divider = GetVisualDivider(item);
+		if (divider == null) return;
+		divider.IsCollapsed = !divider.IsCollapsed;
+		RefreshVisualDividers();
+		SaveSettings();
+	}
+
+	public bool IsVisualModCollection(object collection) => ReferenceEquals(collection, DisplayActiveMods) || ReferenceEquals(collection, DisplayInactiveMods);
+
+	public void ApplyVisualModListDrop(IEnumerable<DivinityModData> draggedItems, bool destinationActive, int insertIndex)
+	{
+		var dragged = draggedItems?.Distinct().ToList() ?? new List<DivinityModData>();
+		if (dragged.Count == 0) return;
+		var activeSequence = DisplayActiveMods.ToList();
+		var inactiveSequence = DisplayInactiveMods.ToList();
+		var destination = destinationActive ? activeSequence : inactiveSequence;
+
+		foreach (var item in dragged)
+		{
+			var oldIndex = destination.IndexOf(item);
+			if (oldIndex >= 0 && oldIndex < insertIndex) insertIndex--;
+			activeSequence.Remove(item);
+			inactiveSequence.Remove(item);
+		}
+		insertIndex = Math.Clamp(insertIndex, 0, destination.Count);
+		destination.InsertRange(insertIndex, dragged);
+
+		void SaveDividerPositions(IList<DivinityModData> sequence, bool active)
+		{
+			for (var i = 0; i < sequence.Count; i++)
+			{
+				if (!sequence[i].IsVisualDivider) continue;
+				var divider = GetVisualDivider(sequence[i]);
+				if (divider == null) continue;
+				divider.IsActiveList = active;
+				divider.Position = i;
+			}
+		}
+		SaveDividerPositions(activeSequence, true);
+		SaveDividerPositions(inactiveSequence, false);
+
+		_updatingVisualModLists = true;
+		try
+		{
+			ActiveMods.Clear();
+			ActiveMods.AddRange(activeSequence.Where(item => !item.IsVisualDivider));
+			InactiveMods.Clear();
+			InactiveMods.AddRange(inactiveSequence.Where(item => !item.IsVisualDivider));
+			for (var i = 0; i < ActiveMods.Count; i++) { ActiveMods[i].Index = i; ActiveMods[i].IsActive = true; }
+			foreach (var mod in InactiveMods) mod.IsActive = false;
+		}
+		finally { _updatingVisualModLists = false; }
+		RefreshVisualDividers();
+		UpdateOrderFromActiveMods();
+		SaveSettings();
+	}
+
+	private DivinityModData CreateVisualDividerItem(ModListVisualDividerData divider) => new()
+	{
+		UUID = $"ReduxVisualDivider_{divider.Id}",
+		Name = divider.Title,
+		VisualDividerId = divider.Id,
+		VisualDividerTitle = divider.Title,
+		VisualDividerColor = divider.Color,
+		IsVisualDividerCollapsed = divider.IsCollapsed,
+		IsVisualDivider = true,
+		ShowVisualDivider = true,
+		CanDrag = true
+	};
+
+	public void RefreshVisualDividers()
+	{
+		if (_updatingVisualModLists) return;
+		_updatingVisualModLists = true;
+		try
+		{
+			// One-time migration from the anchored prototype to independent visual slots.
+			if (Settings.ModListVisualDividers?.Count > 0)
+			{
+				Settings.VisualModListDividers ??= new List<ModListVisualDividerData>();
+				foreach (var legacy in Settings.ModListVisualDividers)
+				{
+					var activeIndex = ActiveMods.ToList().FindIndex(mod => mod.UUID.Equals(legacy.Key, StringComparison.OrdinalIgnoreCase));
+					var inactiveIndex = InactiveMods.ToList().FindIndex(mod => mod.UUID.Equals(legacy.Key, StringComparison.OrdinalIgnoreCase));
+					if (activeIndex >= 0 || inactiveIndex >= 0)
+						Settings.VisualModListDividers.Add(new ModListVisualDividerData { Title = legacy.Value, IsActiveList = activeIndex >= 0, Position = Math.Max(activeIndex, inactiveIndex) });
+				}
+				Settings.ModListVisualDividers.Clear();
+			}
+			var show = String.IsNullOrWhiteSpace(SelectedModCategory) || SelectedModCategory.Equals(AllModsCategory, StringComparison.OrdinalIgnoreCase);
+			void Build(ObservableCollectionExtended<DivinityModData> target, IEnumerable<DivinityModData> mods, bool active)
+			{
+				var result = mods.ToList();
+				foreach (var mod in result) mod.IsHiddenByVisualDivider = false;
+				if (show)
+				{
+					foreach (var divider in (Settings.VisualModListDividers ?? new()).Where(x => x.IsActiveList == active).OrderBy(x => x.Position))
+						result.Insert(Math.Clamp(divider.Position, 0, result.Count), CreateVisualDividerItem(divider));
+					var collapseFollowingRows = false;
+					foreach (var item in result)
+					{
+						if (item.IsVisualDivider)
+						{
+							collapseFollowingRows = GetVisualDivider(item)?.IsCollapsed == true;
+							continue;
+						}
+						item.IsHiddenByVisualDivider = collapseFollowingRows;
+					}
+				}
+				target.Clear(); target.AddRange(result);
+			}
+			Build(DisplayActiveMods, ActiveMods, true);
+			Build(DisplayInactiveMods, InactiveMods, false);
+		}
+		finally { _updatingVisualModLists = false; }
+	}
+	public bool IsModCategoryEnabled(string category) => Settings.DisabledModCategories?.Contains(category, StringComparer.OrdinalIgnoreCase) != true;
+
+	public void SetModCategoryEnabled(string category, bool enabled)
+	{
+		if (String.IsNullOrWhiteSpace(category)) return;
+		var existing = Settings.DisabledModCategories.FirstOrDefault(item => item.Equals(category, StringComparison.OrdinalIgnoreCase));
+		if (enabled && existing != null) Settings.DisabledModCategories.Remove(existing);
+		else if (!enabled && existing == null) Settings.DisabledModCategories.Add(category);
+		SaveSettings();
+		RefreshModCategories();
+	}
+
+	public bool DeleteCustomModCategory(string category)
+	{
+		var existing = Settings.CustomModCategories?.FirstOrDefault(item => item.Equals(category, StringComparison.OrdinalIgnoreCase));
+		if (existing == null) return false;
+		Settings.CustomModCategories.Remove(existing);
+		Settings.ModCategoryColors.Remove(existing);
+		Settings.DisabledModCategories.RemoveAll(item => item.Equals(existing, StringComparison.OrdinalIgnoreCase));
+		Settings.UnseenCategoryModIds.Remove(existing);
+		foreach (var assignment in Settings.ModCategoryAssignments.Values)
+			assignment.RemoveAll(item => item.Equals(existing, StringComparison.OrdinalIgnoreCase));
+		foreach (var emptyKey in Settings.ModCategoryAssignments.Where(entry => entry.Value.Count == 0).Select(entry => entry.Key).ToList())
+			Settings.ModCategoryAssignments.Remove(emptyKey);
+		if (SelectedModCategory.Equals(existing, StringComparison.OrdinalIgnoreCase)) SelectedModCategory = AllModsCategory;
+		SaveSettings();
+		RefreshModCategories();
+		return true;
+	}
+
+	public void SetNewModCategoryIndicatorsDisabled(bool disabled)
+	{
+		Settings.DisableNewModCategoryIndicators = disabled;
+		if (disabled) Settings.UnseenCategoryModIds.Clear();
+		SaveSettings();
+		RefreshModCategories();
+	}
+
+	public void MarkModCategorySeen(string category)
+	{
+		if (String.IsNullOrWhiteSpace(category) || Settings.DisableNewModCategoryIndicators) return;
+		var changed = false;
+		if (category.Equals(AllModsCategory, StringComparison.OrdinalIgnoreCase))
+		{
+			changed = Settings.UnseenCategoryModIds.Count > 0;
+			Settings.UnseenCategoryModIds.Clear();
+		}
+		else changed = Settings.UnseenCategoryModIds.Remove(category);
+		if (changed) { SaveSettings(); RefreshModCategories(); }
+	}
+
+	private bool CategoryHasNewMods(string category) => !Settings.DisableNewModCategoryIndicators &&
+		(category.Equals(AllModsCategory, StringComparison.OrdinalIgnoreCase)
+			? Settings.UnseenCategoryModIds.Values.Any(ids => ids.Count > 0)
+			: Settings.UnseenCategoryModIds.TryGetValue(category, out var ids) && ids.Count > 0);
+
+	public bool TryAddCustomModCategory(string categoryName, string color, out string error)
+	{
+		categoryName = categoryName?.Trim();
+		error = String.Empty;
+		if (String.IsNullOrWhiteSpace(categoryName))
+		{
+			error = "Enter a category name.";
+			return false;
+		}
+		if (categoryName.Equals(AllModsCategory, StringComparison.OrdinalIgnoreCase) ||
+			categoryName.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase) ||
+			GetAllModCategories().Contains(categoryName, StringComparer.OrdinalIgnoreCase))
+		{
+			error = $"A category named '{categoryName}' already exists.";
+			return false;
+		}
+		color = Regex.IsMatch(color ?? String.Empty, "^#[0-9A-Fa-f]{6}$") ? color.ToUpperInvariant() : GetNextCustomCategoryColor();
+		var colorOwner = GetAllModCategories().FirstOrDefault(category =>
+			GetCategoryColor(category).Equals(color, StringComparison.OrdinalIgnoreCase));
+		if (colorOwner != null)
+		{
+			error = $"That color is already used by '{colorOwner}'. Choose a unique color for this category.";
+			return false;
+		}
+
+		Settings.CustomModCategories.Add(categoryName);
+		Settings.CustomModCategories = Settings.CustomModCategories
+			.OrderBy(category => category, StringComparer.CurrentCultureIgnoreCase)
+			.ToList();
+		Settings.ModCategoryColors[categoryName] = color;
+		SaveSettings();
+		ScheduleRefreshModCategories();
+		return true;
+	}
+
+	public string GetSuggestedCustomCategoryColor() => GetNextCustomCategoryColor();
+
+	public bool TrySetCategoryColor(string category, string color, out string error)
+	{
+		error = String.Empty;
+		if (String.IsNullOrWhiteSpace(category) || !Regex.IsMatch(color ?? String.Empty, "^#[0-9A-Fa-f]{6}$"))
+		{
+			error = "Choose a valid category color.";
+			return false;
+		}
+		var colorOwner = GetAllModCategories().FirstOrDefault(existingCategory =>
+			!existingCategory.Equals(category, StringComparison.OrdinalIgnoreCase) &&
+			GetCategoryColor(existingCategory).Equals(color, StringComparison.OrdinalIgnoreCase));
+		if (colorOwner != null)
+		{
+			error = $"That color is already used by '{colorOwner}'. Choose a unique color for this category.";
+			return false;
+		}
+		Settings.ModCategoryColors[category] = color.ToUpperInvariant();
+		SaveSettings();
+		RefreshModCategories();
+		return true;
+	}
+
+	public string GetCurrentCategoryColor(string category) => GetCategoryColor(category);
+
+	public void ToggleModCategoryAssignment(DivinityModData mod, string category)
+	{
+		if (mod == null || String.IsNullOrWhiteSpace(mod.UUID))
+		{
+			return;
+		}
+
+		if (String.IsNullOrWhiteSpace(category))
+		{
+			Settings.ModCategoryAssignments.Remove(mod.UUID);
+			Settings.ModCategoryOverrides.Remove(mod.UUID);
+		}
+		else
+		{
+			if (!Settings.ModCategoryAssignments.TryGetValue(mod.UUID, out var categories))
+			{
+				categories = new List<string>();
+				Settings.ModCategoryAssignments[mod.UUID] = categories;
+			}
+			var existing = categories.FirstOrDefault(item => item.Equals(category, StringComparison.OrdinalIgnoreCase));
+			if (existing != null) categories.Remove(existing); else categories.Add(category);
+			if (categories.Count == 0) Settings.ModCategoryAssignments.Remove(mod.UUID);
+		}
+
+		SaveSettings();
+		ScheduleRefreshModCategories();
+	}
+
+	public bool HasModCategoryOverride(DivinityModData mod, string category = null)
+	{
+		if (mod == null || String.IsNullOrWhiteSpace(mod.UUID) ||
+			!Settings.ModCategoryAssignments.TryGetValue(mod.UUID, out var assignedCategories) || assignedCategories?.Count == 0)
+		{
+			return false;
+		}
+
+		return category == null || assignedCategories.Contains(category, StringComparer.OrdinalIgnoreCase);
+	}
+
+	private static bool CategorySourceContains(string source, string keyword)
+	{
+		if (keyword.Contains(' '))
+		{
+			return source.Contains(keyword, StringComparison.OrdinalIgnoreCase);
+		}
+
+		return Regex.IsMatch(source, $@"\b{Regex.Escape(keyword)}\b", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+	}
+
+	private IDisposable _refreshModCategoriesTask;
+	private bool _categoryFilterRestoreAttempted;
+
+	private void ScheduleRefreshModCategories()
+	{
+		_refreshModCategoriesTask?.Dispose();
+		_refreshModCategoriesTask = RxApp.MainThreadScheduler.Schedule(TimeSpan.FromMilliseconds(100), RefreshModCategories);
+	}
+
+	private void RefreshModCategories()
+	{
+		var allMods = ActiveMods.Concat(InactiveMods)
+			.GroupBy(mod => mod.UUID, StringComparer.OrdinalIgnoreCase)
+			.Select(group => group.First())
+			.ToList();
+		foreach (var mod in allMods)
+		{
+			var categories = GetEffectiveModCategories(mod);
+			mod.DisplayCategory = categories.FirstOrDefault() ?? UncategorizedModsCategory;
+			mod.DisplayCategories = categories.Select(category => new ModCategoryDisplayData(category, GetCategoryColor(category))).ToList();
+		}
+		var currentModIds = allMods.Select(mod => mod.UUID).Where(id => !String.IsNullOrWhiteSpace(id))
+			.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+		var indicatorStateChanged = false;
+		if (!Settings.NewModCategoryIndicatorInitialized)
+		{
+			Settings.NewModCategoryIndicatorInitialized = true;
+			Settings.KnownCategorizedModIds = currentModIds;
+			indicatorStateChanged = true;
+		}
+		else
+		{
+			var knownIds = Settings.KnownCategorizedModIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+			var newMods = allMods.Where(mod => !String.IsNullOrWhiteSpace(mod.UUID) && !knownIds.Contains(mod.UUID)).ToList();
+			if (!Settings.DisableNewModCategoryIndicators)
+			{
+				foreach (var mod in newMods)
+				{
+					foreach (var category in mod.DisplayCategories.Select(item => item.Name))
+					{
+						if (!Settings.UnseenCategoryModIds.TryGetValue(category, out var ids))
+							Settings.UnseenCategoryModIds[category] = ids = new List<string>();
+						if (!ids.Contains(mod.UUID, StringComparer.OrdinalIgnoreCase)) ids.Add(mod.UUID);
+					}
+				}
+			}
+			if (newMods.Count > 0)
+			{
+				Settings.KnownCategorizedModIds.AddRange(newMods.Select(mod => mod.UUID));
+				indicatorStateChanged = true;
+			}
+		}
+		if (indicatorStateChanged && IsInitialized) QueueSave();
+		var previousSelection = SelectedModCategory;
+		// Early category refreshes can run before the installed-mod refresh is complete.
+		// Wait until initialization finishes so a saved category is not rejected simply
+		// because its mods (and therefore its sidebar entry) have not appeared yet.
+		if (!_categoryFilterRestoreAttempted && IsInitialized)
+		{
+			_categoryFilterRestoreAttempted = true;
+			previousSelection = Settings.SaveModCategoryFilterBetweenSessions && !String.IsNullOrWhiteSpace(Settings.SavedModCategoryFilter)
+				? Settings.SavedModCategoryFilter
+				: AllModsCategory;
+		}
+
+		ModCategoryFilters.Clear();
+		ModCategoryFilters.Add(new ModCategoryFilterItem(AllModsCategory, allMods.Count, GetCategoryColor(AllModsCategory), CategoryHasNewMods(AllModsCategory)));
+		foreach (var category in ReduxCategoryRules)
+		{
+			if (!IsModCategoryEnabled(category.Name)) continue;
+			var count = allMods.Count(mod => mod.DisplayCategories.Any(item => item.Name.Equals(category.Name, StringComparison.OrdinalIgnoreCase)));
+			if (!Settings.HideEmptyModCategories || count > 0)
+			{
+				ModCategoryFilters.Add(new ModCategoryFilterItem(category.Name, count, GetCategoryColor(category.Name), CategoryHasNewMods(category.Name)));
+			}
+		}
+		foreach (var customCategory in Settings.CustomModCategories ?? Enumerable.Empty<string>())
+		{
+			if (!IsModCategoryEnabled(customCategory)) continue;
+			var count = allMods.Count(mod => mod.DisplayCategories.Any(item => item.Name.Equals(customCategory, StringComparison.OrdinalIgnoreCase)));
+			if (!Settings.HideEmptyModCategories || count > 0)
+			{
+				ModCategoryFilters.Add(new ModCategoryFilterItem(customCategory, count, GetCategoryColor(customCategory), CategoryHasNewMods(customCategory)));
+			}
+		}
+		var uncategorizedCount = allMods.Count(mod => mod.DisplayCategories.Any(item => item.Name.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase)));
+		if (!Settings.HideEmptyModCategories || uncategorizedCount > 0)
+		{
+			ModCategoryFilters.Add(new ModCategoryFilterItem(UncategorizedModsCategory, uncategorizedCount, GetCategoryColor(UncategorizedModsCategory), CategoryHasNewMods(UncategorizedModsCategory)));
+		}
+
+		SelectedModCategory = ModCategoryFilters.Any(category => category.Name.Equals(previousSelection, StringComparison.OrdinalIgnoreCase))
+			? previousSelection
+			: AllModsCategory;
+		this.RaisePropertyChanged(nameof(SelectedModCategory));
+
+		OnFilterTextChanged(ActiveModFilterText, ActiveMods);
+		OnFilterTextChanged(InactiveModFilterText, InactiveMods);
 	}
 
 	private readonly MainWindowExceptionHandler exceptionHandler;
@@ -5088,7 +5664,9 @@ Directory the zip will be extracted to:
 		var productName = ((AssemblyProductAttribute)Attribute.GetCustomAttribute(assembly, typeof(AssemblyProductAttribute), false)).Product;
 		AppTitle = productName;
 		Version = assembly.GetName().Version;
-		Title = $"{productName} {Version}";
+		// Keep the inherited assembly version for updater/cache compatibility, while
+		// presenting Redux's own early-development version in the window chrome.
+		Title = $"{productName} v0.1.0-preview";
 		AutoUpdater.InstalledVersion = Version;
 		AutoUpdater.AppTitle = Title;
 		DivinityApp.Log($"{Title} initializing...");
@@ -5433,6 +6011,37 @@ Directory the zip will be extracted to:
 		this.WhenAnyValue(x => x.InactiveModFilterText).Throttle(TimeSpan.FromMilliseconds(500)).ObserveOn(RxApp.MainThreadScheduler).
 			Subscribe((s) => { OnFilterTextChanged(s, InactiveMods); });
 
+		this.WhenAnyValue(x => x.SelectedModCategory)
+			.Skip(1)
+			.ObserveOn(RxApp.MainThreadScheduler)
+			.Subscribe(category =>
+			{
+				OnFilterTextChanged(ActiveModFilterText, ActiveMods);
+				OnFilterTextChanged(InactiveModFilterText, InactiveMods);
+				RefreshVisualDividers();
+				if (Settings.SaveModCategoryFilterBetweenSessions && IsInitialized &&
+					!String.Equals(Settings.SavedModCategoryFilter, category, StringComparison.OrdinalIgnoreCase))
+				{
+					Settings.SavedModCategoryFilter = category;
+					QueueSave();
+				}
+			});
+
+		Settings.WhenAnyValue(x => x.HideEmptyModCategories)
+			.Skip(1)
+			.ObserveOn(RxApp.MainThreadScheduler)
+			.Subscribe(_ => ScheduleRefreshModCategories());
+
+		this.WhenAnyValue(x => x.IsInitialized)
+			.Where(initialized => initialized)
+			.Take(1)
+			.ObserveOn(RxApp.MainThreadScheduler)
+			.Subscribe(_ => ScheduleRefreshModCategories());
+
+		modsConnection.AutoRefresh(x => x.Tags)
+			.ObserveOn(RxApp.MainThreadScheduler)
+			.Subscribe(_ => ScheduleRefreshModCategories());
+
 		ActiveMods.WhenAnyPropertyChanged(nameof(DivinityModData.Index)).Throttle(TimeSpan.FromMilliseconds(25)).Subscribe(_ =>
 		{
 			SelectedModOrder?.Sort(SortModOrder);
@@ -5579,13 +6188,22 @@ Directory the zip will be extracted to:
 
 		ActiveMods.CollectionChanged += (o, e) =>
 		{
+			RefreshVisualDividers();
 			if (e.Action == NotifyCollectionChangedAction.Add || e.Action == NotifyCollectionChangedAction.Remove || e.Action == NotifyCollectionChangedAction.Reset)
 			{
 				HasExported = false;
 			}
 			_updateOrderTask?.Dispose();
 			_updateOrderTask = RxApp.MainThreadScheduler.Schedule(TimeSpan.FromMilliseconds(250), UpdateOrderFromActiveMods);
+			ScheduleRefreshModCategories();
 		};
+
+		InactiveMods.CollectionChanged += (o, e) =>
+		{
+			RefreshVisualDividers();
+			ScheduleRefreshModCategories();
+		};
+		ScheduleRefreshModCategories();
 
 		var fwService = Services.Get<IFileWatcherService>();
 		_modSettingsWatcher = fwService.WatchDirectory("", "*modsettings.lsx");

@@ -86,6 +86,12 @@ public class ModListDropHandler : DefaultDropHandler
 			return;
 		}
 		base.DragOver(dropInfo);
+		if (ReferenceEquals(dropInfo.TargetCollection, _viewModel.DisplayInactiveMods) &&
+			ExtractData(dropInfo.Data).OfType<DivinityModData>().Any(item => item.IsVisualDivider))
+		{
+			dropInfo.Effects = DragDropEffects.None;
+			return;
+		}
 		if (dropInfo.Effects == DragDropEffects.None && dropInfo.Data is DataObject data && data.ContainsFileDropList())
 		{
 			var files = data.GetFileDropList();
@@ -113,7 +119,7 @@ public class ModListDropHandler : DefaultDropHandler
 			return;
 		}
 
-		bool isActive = dropInfo.TargetCollection == _viewModel.ActiveMods;
+		bool isActive = dropInfo.TargetCollection == _viewModel.ActiveMods || dropInfo.TargetCollection == _viewModel.DisplayActiveMods;
 
 		if (dropInfo.Data is DataObject dropFileData)
 		{
@@ -131,6 +137,14 @@ public class ModListDropHandler : DefaultDropHandler
 		if (dropInfo.DragInfo == null) return;
 
 		var insertIndex = dropInfo.UnfilteredInsertIndex;
+		if (_viewModel.IsVisualModCollection(dropInfo.TargetCollection))
+		{
+			var destinationActive = ReferenceEquals(dropInfo.TargetCollection, _viewModel.DisplayActiveMods);
+			var visualData = ExtractData(dropInfo.Data).OfType<DivinityModData>().ToList();
+			if (!destinationActive && visualData.Any(item => item.IsVisualDivider)) return;
+			_viewModel.ApplyVisualModListDrop(visualData, destinationActive, insertIndex);
+			return;
+		}
 
 		var itemsControl = dropInfo.VisualTarget as ItemsControl;
 		if (itemsControl != null && itemsControl.Items is IEditableCollectionView editableItems)

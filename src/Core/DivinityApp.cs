@@ -17,12 +17,19 @@ public static class DivinityApp
 {
 	public const string DIR_DATA = "Data\\";
 	public const string URL_REPO = @"https://github.com/LaughingLeader/BG3ModManager";
-	public const string URL_CHANGELOG = @"https://github.com/LaughingLeader/BG3ModManager/wiki/Changelog";
-	public const string URL_CHANGELOG_RAW = @"https://raw.githubusercontent.com/wiki/LaughingLeader/BG3ModManager/Changelog.md";
-	public const string URL_UPDATE = @"https://raw.githubusercontent.com/LaughingLeader/BG3ModManager/master/Update.xml";
+	public const string URL_REDUX_REPO = @"https://github.com/raincloudsfollow/BG3ModManager-Redux";
+	public const string URL_REDUX_AUTHOR = @"https://github.com/raincloudsfollow";
+	public const string URL_REDUX_RELEASES = @"https://github.com/raincloudsfollow/BG3ModManager-Redux/releases";
+	public const string URL_REDUX_ISSUES = @"https://github.com/raincloudsfollow/BG3ModManager-Redux/issues";
+	public const string URL_REDUX_LICENSE = @"https://github.com/raincloudsfollow/BG3ModManager-Redux/blob/master/LICENSE";
+	public const string URL_BG3_NEXUS = @"https://www.nexusmods.com/baldursgate3";
+	public const string URL_EXTENDER_REPO = @"https://github.com/Norbyte/bg3se";
+	public const string URL_CHANGELOG = URL_REDUX_RELEASES;
+	public const string URL_CHANGELOG_RAW = @"https://raw.githubusercontent.com/raincloudsfollow/BG3ModManager-Redux/master/README.md";
+	public const string URL_UPDATE = @"https://raw.githubusercontent.com/raincloudsfollow/BG3ModManager-Redux/master/Update.xml";
 	public const string URL_AUTHOR = @"https://github.com/LaughingLeader";
-	public const string URL_ISSUES = @"https://github.com/LaughingLeader/BG3ModManager/issues";
-	public const string URL_LICENSE = @"https://github.com/LaughingLeader/BG3ModManager/blob/master/LICENSE";
+	public const string URL_ISSUES = URL_REDUX_ISSUES;
+	public const string URL_LICENSE = URL_REDUX_LICENSE;
 	public const string URL_DONATION = @"https://ko-fi.com/laughingleader";
 
 	public const string GITHUB_USER = "LaughingLeader";

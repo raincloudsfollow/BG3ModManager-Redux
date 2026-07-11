@@ -8,6 +8,7 @@
 	Title="Help"
 	Width="800"
 	Height="450"
+	FontFamily="{DynamicResource Redux.FontFamily.UI}"
 	mc:Ignorable="d">
 	<Window.Style>
 		<Style BasedOn="{StaticResource {x:Type Window}}" TargetType="Window" />

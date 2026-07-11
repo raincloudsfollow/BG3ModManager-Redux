@@ -67,7 +67,17 @@ public class ModListDragHandler : DefaultDragHandler
 		{
 			_lastDragInfo = dragInfo;
 			dragInfo.Data = null;
-			if (dragInfo.SourceCollection == _viewModel.ActiveMods)
+			if (dragInfo.SourceCollection == _viewModel.DisplayActiveMods)
+			{
+				var selected = _viewModel.DisplayActiveMods.Where(x => x.IsSelected && (x.IsVisualDivider || x.Visibility == Visibility.Visible));
+				dragInfo.Data = selected;
+			}
+			else if (dragInfo.SourceCollection == _viewModel.DisplayInactiveMods)
+			{
+				var selected = _viewModel.DisplayInactiveMods.Where(x => x.IsSelected && (x.IsVisualDivider || (x.Visibility == Visibility.Visible && x.CanDrag)));
+				dragInfo.Data = selected;
+			}
+			else if (dragInfo.SourceCollection == _viewModel.ActiveMods)
 			{
 				var selected = _viewModel.ActiveMods.Where(x => x.IsSelected && x.Visibility == Visibility.Visible);
 				dragInfo.Data = selected;

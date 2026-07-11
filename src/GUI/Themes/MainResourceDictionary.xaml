@@ -26,9 +26,16 @@
     xmlns:xcthemes="clr-namespace:Xceed.Wpf.Toolkit.Themes;assembly=DotNetProjects.Wpf.Extended.Toolkit"
     x:Name="MainResources">
 	<ResourceDictionary.MergedDictionaries>
+		<ResourceDictionary Source="Typography.xaml" />
 		<ResourceDictionary Source="DefaultStyles/ComboBox.xaml" />
 	</ResourceDictionary.MergedDictionaries>
-	<FontFamily x:Key="ReduxFontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
+	<!--  Keep native menu behavior while giving Redux popups a softer silhouette.  -->
+	<Style BasedOn="{StaticResource {x:Type ContextMenu}}" TargetType="{x:Type ContextMenu}">
+		<Setter Property="Background" Value="{DynamicResource ReduxSurfaceElevatedBrush}" />
+		<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderBrush}" />
+		<Setter Property="BorderThickness" Value="1" />
+		<Setter Property="adonisExtensions:CornerRadiusExtension.CornerRadius" Value="7" />
+	</Style>
 	<!--  Bridge legacy AdonisUI controls into the Redux semantic palette.  -->
 	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.ForegroundBrush}" Color="{DynamicResource ReduxTextPrimaryColor}" />
 	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.DisabledForegroundBrush}" Color="{DynamicResource ReduxTextMutedColor}" />
@@ -373,7 +380,7 @@
 					    IsEnabled="{Binding CanOpenNexusModsLink}"
 					    Visibility="{Binding OpenNexusModsLinkVisibility}">
 						<MenuItem.Icon>
-							<Image Source="{StaticResource OpenInBrowserImage}" />
+							<ContentControl ContentTemplate="{DynamicResource NexusPlatformIconTemplate}" />
 						</MenuItem.Icon>
 					</MenuItem>
 					<MenuItem Command="{Binding Path=ToggleForceAllowInLoadOrderCommand, Source={x:Static dapp:DivinityApp.Commands}}" CommandParameter="{Binding}" Visibility="{Binding ToggleForceAllowInLoadOrderVisibility}">
@@ -395,10 +402,10 @@
 							<TextBlock>
 								<TextBlock.Style>
 									<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="TextBlock">
-										<Setter Property="Text" Value="Allow in Load Order" />
+										<Setter Property="Text" Value="Add as Load Order Entry (Advanced)" />
 										<Style.Triggers>
 											<DataTrigger Binding="{Binding ForceAllowInLoadOrder}" Value="true">
-												<Setter Property="Text" Value="Remove from Load Order" />
+												<Setter Property="Text" Value="Remove Load Order Entry" />
 											</DataTrigger>
 										</Style.Triggers>
 									</Style>
@@ -453,6 +460,75 @@
 			</Setter.Value>
 		</Setter>
 		<Setter Property="HorizontalContentAlignment" Value="Stretch" />
+		<Setter Property="Template">
+			<Setter.Value>
+				<ControlTemplate TargetType="{x:Type ListViewItem}">
+					<StackPanel>
+						<Border x:Name="VisualDivider"
+							Margin="12,8,12,6"
+							Padding="0,4"
+							Background="Transparent"
+							Visibility="{Binding ShowVisualDivider, Converter={StaticResource BoolToVisibilityConverter}}">
+							<Grid>
+								<Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+								<ToggleButton Width="22" Height="22" Margin="0,0,5,0" Padding="0" Background="Transparent" BorderThickness="0"
+									Tag="ReduxDividerToggle" ToolTip="Collapse or expand this separator section" IsChecked="{Binding IsVisualDividerCollapsed, Mode=OneWay}">
+									<Path Width="8" Height="5" Fill="{DynamicResource ReduxTextSecondaryBrush}" Stretch="Uniform">
+										<Path.Style><Style TargetType="Path"><Setter Property="Data" Value="M 0,0 L 8,0 L 4,5 Z" /><Style.Triggers><DataTrigger Binding="{Binding IsVisualDividerCollapsed}" Value="True"><Setter Property="Data" Value="M 0,0 L 5,4 L 0,8 Z" /><Setter Property="Width" Value="5" /><Setter Property="Height" Value="8" /></DataTrigger></Style.Triggers></Style></Path.Style>
+									</Path>
+								</ToggleButton>
+								<Path Grid.Column="1" Width="12" Height="12" Margin="0,0,8,0"
+										Data="M 6,0 L 12,6 L 6,12 L 0,6 Z M 6,3 L 9,6 L 6,9 L 3,6 Z"
+										Fill="{Binding VisualDividerColor, Converter={StaticResource StringToSolidBrushConverter}}"
+										Stretch="Uniform" />
+								<TextBlock Grid.Column="2" Margin="0,0,10,0" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold"
+										Foreground="{Binding VisualDividerColor, Converter={StaticResource StringToSolidBrushConverter}}"
+										Text="{Binding VisualDividerTitle}" TextTrimming="CharacterEllipsis"
+										Visibility="{Binding VisualDividerTitle, Converter={StaticResource StringNotEmptyToVisibilityConverter}}" />
+								<Border Grid.Column="3" Height="1" VerticalAlignment="Center"
+									Background="{Binding VisualDividerColor, Converter={StaticResource StringToSolidBrushConverter}}" />
+							</Grid>
+						</Border>
+						<Border x:Name="RowBorder"
+							MinHeight="{TemplateBinding MinHeight}"
+							Padding="{TemplateBinding Padding}"
+							Background="{TemplateBinding Background}"
+							BorderBrush="{TemplateBinding BorderBrush}"
+							BorderThickness="{TemplateBinding BorderThickness}"
+							SnapsToDevicePixels="True">
+							<GridViewRowPresenter
+								Columns="{Binding Path=View.Columns, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}"
+								Content="{TemplateBinding Content}"
+								VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+						</Border>
+					</StackPanel>
+					<ControlTemplate.Triggers>
+						<Trigger Property="IsMouseOver" Value="True">
+							<Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource ReduxAccentSoftBrush}" />
+						</Trigger>
+						<Trigger Property="IsSelected" Value="True">
+							<Setter TargetName="RowBorder" Property="Background" Value="{DynamicResource ReduxSelectionBrush}" />
+							<Setter TargetName="RowBorder" Property="BorderBrush" Value="{DynamicResource ReduxAccentBrush}" />
+						</Trigger>
+						<MultiDataTrigger>
+							<MultiDataTrigger.Conditions>
+								<Condition Binding="{Binding IsVisualDivider}" Value="True" />
+								<Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource TemplatedParent}}" Value="True" />
+								<Condition Binding="{Binding DataContext.IsDragging, RelativeSource={RelativeSource AncestorType={x:Type ListView}}}" Value="True" />
+							</MultiDataTrigger.Conditions>
+							<Setter TargetName="VisualDivider" Property="Effect">
+								<Setter.Value>
+									<DropShadowEffect BlurRadius="13" Color="#A58BFF" Opacity="0.9" ShadowDepth="0" />
+								</Setter.Value>
+							</Setter>
+						</MultiDataTrigger>
+						<DataTrigger Binding="{Binding IsVisualDivider}" Value="True">
+							<Setter TargetName="RowBorder" Property="Visibility" Value="Collapsed" />
+						</DataTrigger>
+					</ControlTemplate.Triggers>
+				</ControlTemplate>
+			</Setter.Value>
+		</Setter>
 		<!--
 			IsSelected is set via ActiveModListView_ItemContainerStatusChanged.UpdateViewSelection instead,
 			so focus and selection can be more finely controlled.
@@ -473,6 +549,9 @@
 			</Setter.Value>
 		</Setter>
 		<Style.Triggers>
+			<DataTrigger Binding="{Binding IsHiddenByVisualDivider}" Value="True">
+				<Setter Property="Visibility" Value="Collapsed" />
+			</DataTrigger>
 			<Trigger Property="IsMouseOver" Value="True">
 				<Setter Property="Background" Value="{DynamicResource ReduxAccentSoftBrush}" />
 			</Trigger>
@@ -706,9 +785,18 @@
 					    Text="(Editor Project)"
 					    Visibility="{Binding IsEditorMod, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}" />
 					<TextBlock HorizontalAlignment="Right"
-					    Foreground="Orange"
-					    Text="(Override)"
-					    Visibility="{Binding IsForceLoaded, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}" />
+					    Foreground="{DynamicResource ReduxWarningBrush}"
+					    Visibility="{Binding IsForceLoaded, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
+						<TextBlock.Style>
+							<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="TextBlock">
+								<Setter Property="Text" Value="Always Loaded" />
+								<Style.Triggers>
+									<DataTrigger Binding="{Binding IsForceLoadedMergedMod}" Value="True"><Setter Property="Text" Value="Contains File Overrides" /></DataTrigger>
+									<DataTrigger Binding="{Binding ForceAllowInLoadOrder}" Value="True"><Setter Property="Text" Value="Always Loaded + Load Order Entry" /></DataTrigger>
+								</Style.Triggers>
+							</Style>
+						</TextBlock.Style>
+					</TextBlock>
 				</StackPanel>
 			</Grid>
 
@@ -768,14 +856,14 @@
 				<TextBlock Margin="2" Text="{Binding LastModifiedDateText}" />
 			</StackPanel>
 			<StackPanel Margin="2" Orientation="Vertical" Visibility="{Binding IsForceLoaded, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
-				<Separator Background="{DynamicResource {x:Static adonisUI:Brushes.Layer1HighlightBorderBrush}}" />
-				<TextBlock Foreground="OrangeRed">
-					This mod overrides base game files directly.<LineBreak />
-					As long as this mod exists in the Mods folder,<LineBreak />
-					these files will be overwritten, even if the mod is disabled.</TextBlock>
-				<TextBlock Text="If this is intended, you can ignore this warning." />
-				<TextBlock Foreground="Lime" Text="This mod can be rearranged in the load order, due to it also having files of its own. Note that disabling it will not disable the file overrides." Visibility="{Binding IsForceLoadedMergedMod, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}" />
-				<TextBlock Foreground="OrangeRed" Text="Overwritten builtin folders:" />
+				<Separator Background="{DynamicResource ReduxBorderBrush}" />
+				<TextBlock FontWeight="SemiBold" Foreground="{DynamicResource ReduxWarningBrush}" Text="Overrides Game Files" />
+				<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}" TextWrapping="Wrap"
+					Text="This package contains files that directly override built-in game files. Those overrides remain active while the .pak exists in the Mods folder and usually are not written to modsettings.lsx." />
+				<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}" TextWrapping="Wrap"
+					Text="This package also has a normal load-order entry. Disabling that entry may not disable its direct file overrides."
+					Visibility="{Binding IsForceLoadedMergedMod, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}" />
+				<TextBlock Foreground="{DynamicResource ReduxWarningBrush}" Text="Overridden built-in folders:" />
 				<TextBlock Text="{Binding BuiltinOverrideModsText}" />
 			</StackPanel>
 			<Grid Margin="2" Visibility="{Binding HasInvalidUUIDVisibility}">
@@ -795,7 +883,6 @@
 				    Source="{StaticResource StatusCriticalError}"
 				    Stretch="UniformToFill" />
 				<TextBlock Grid.Column="1"
-				    FontFamily="Arial"
 				    FontWeight="Bold"
 				    Foreground="Red"
 				    Text="This mod has an invalid UUID, and will likely fail to load, resetting your load order." />
@@ -990,19 +1077,50 @@
 		<TextBlock Text="{Binding LastModified, StringFormat={x:Static dapp:DivinityApp.DateTimeColumnFormat}}"
 		    ToolTip="{Binding LastModified, StringFormat={x:Static dapp:DivinityApp.DateTimeTooltipFormat}}" />
 	</DataTemplate>
+	<DataTemplate x:Key="NexusPlatformIconTemplate">
+		<Image Width="14" Height="14"
+			RenderOptions.BitmapScalingMode="HighQuality"
+			Source="/BG3ModManager;component/Resources/Icons/Platforms/nexus.png"
+			Stretch="Uniform" />
+	</DataTemplate>
+	<DataTemplate x:Key="ModioPlatformIconTemplate">
+		<Image Width="14" Height="14"
+			RenderOptions.BitmapScalingMode="HighQuality"
+			Source="/BG3ModManager;component/Resources/Icons/Platforms/modio.png"
+			Stretch="Uniform" />
+	</DataTemplate>
+	<DataTemplate x:Key="PlatformIconPresenterTemplate" DataType="{x:Type data:DivinityModData}">
+		<Grid Width="14" Height="14">
+			<ContentControl ContentTemplate="{StaticResource NexusPlatformIconTemplate}">
+				<ContentControl.Style><Style TargetType="ContentControl"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.NEXUSMODS}"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ContentControl.Style>
+			</ContentControl>
+			<ContentControl ContentTemplate="{StaticResource ModioPlatformIconTemplate}">
+				<ContentControl.Style><Style TargetType="ContentControl"><Setter Property="Visibility" Value="Collapsed" /><Style.Triggers><DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.MODIO}"><Setter Property="Visibility" Value="Visible" /></DataTrigger></Style.Triggers></Style></ContentControl.Style>
+			</ContentControl>
+		</Grid>
+	</DataTemplate>
 	<DataTemplate x:Key="ModSourceTemplate" DataType="{x:Type data:DivinityModData}">
 		<StackPanel Orientation="Horizontal">
-			<TextBlock VerticalAlignment="Center"
-			    Foreground="{DynamicResource ReduxTextSecondaryBrush}"
-			    Text="{Binding DisplaySource}"
-			    ToolTip="{Binding DisplaySource, StringFormat='Metadata source: {0}'}" />
-			<TextBlock Margin="6,0,0,0"
+			<Border Padding="7,2" VerticalAlignment="Center" BorderThickness="1" CornerRadius="8"
+				ToolTip="{Binding DisplaySource, StringFormat='Metadata source: {0}'}">
+				<Border.Style><Style TargetType="Border">
+					<Setter Property="Background" Value="#168F879E" /><Setter Property="BorderBrush" Value="#668F879E" />
+					<Style.Triggers>
+						<DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.NEXUSMODS}"><Setter Property="Background" Value="#22F9A332" /><Setter Property="BorderBrush" Value="#F9A332" /></DataTrigger>
+						<DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.MODIO}"><Setter Property="Background" Value="#2205C2D8" /><Setter Property="BorderBrush" Value="#05C2D8" /></DataTrigger>
+					</Style.Triggers>
+				</Style></Border.Style>
+				<StackPanel Orientation="Horizontal">
+					<ContentControl Margin="0,0,5,0" Content="{Binding}" ContentTemplate="{StaticResource PlatformIconPresenterTemplate}" Visibility="{Binding Metadata.OnlineSourceVisibility}" />
+					<TextBlock VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ReduxTextPrimaryBrush}" Text="{Binding DisplaySource}" />
+				</StackPanel>
+			</Border>
+			<Image Width="16" Height="16" Margin="6,0,0,0"
 			    VerticalAlignment="Center"
-			    FontFamily="Segoe UI Symbol"
-			    FontSize="15"
-			    Foreground="{DynamicResource ReduxWarningBrush}"
-			    Text="&#x26A0;">
-				<TextBlock.ToolTip>
+				RenderOptions.BitmapScalingMode="HighQuality"
+				Source="/BG3ModManager;component/Resources/Icons/Platforms/modio-warning.png"
+				Stretch="Uniform">
+				<Image.ToolTip>
 					<ToolTip Placement="Mouse" HorizontalOffset="12" VerticalOffset="10">
 						<Border MaxWidth="390"
 							Padding="12,10"
@@ -1011,27 +1129,27 @@
 							BorderThickness="1"
 							CornerRadius="8">
 							<StackPanel>
-								<TextBlock FontFamily="{DynamicResource ReduxFontFamily}"
+								<TextBlock FontFamily="{DynamicResource Redux.FontFamily.UI}"
 									FontSize="13"
 									FontWeight="SemiBold"
 									Foreground="{DynamicResource ReduxWarningBrush}"
 									Text="Limited mod.io support" />
 								<TextBlock Margin="0,5,0,0"
-									FontFamily="{DynamicResource ReduxFontFamily}"
+									FontFamily="{DynamicResource Redux.FontFamily.UI}"
 									Foreground="{DynamicResource ReduxTextPrimaryBrush}"
 									Text="Subscribed mods can be restored or redownloaded by BG3 after Redux deletes the local file."
 									TextWrapping="Wrap" />
 								<TextBlock Margin="0,6,0,0"
-									FontFamily="{DynamicResource ReduxFontFamily}"
+									FontFamily="{DynamicResource Redux.FontFamily.UI}"
 									Foreground="{DynamicResource ReduxTextSecondaryBrush}"
 									Text="Unsubscribe through mod.io or BG3's in-game Mod Manager when removing the mod. Manual/local or Nexus Mods installations are recommended for predictable file management."
 									TextWrapping="Wrap" />
 							</StackPanel>
 						</Border>
 					</ToolTip>
-				</TextBlock.ToolTip>
-				<TextBlock.Style>
-					<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
+				</Image.ToolTip>
+				<Image.Style>
+					<Style TargetType="{x:Type Image}">
 						<Setter Property="Visibility" Value="Collapsed" />
 						<Style.Triggers>
 							<MultiDataTrigger>
@@ -1043,9 +1161,23 @@
 							</MultiDataTrigger>
 						</Style.Triggers>
 					</Style>
-				</TextBlock.Style>
-			</TextBlock>
+				</Image.Style>
+			</Image>
 		</StackPanel>
+	</DataTemplate>
+	<DataTemplate x:Key="ModCategoryTemplate" DataType="{x:Type data:DivinityModData}">
+		<ItemsControl ItemsSource="{Binding DisplayCategories}" ToolTip="{Binding DisplayCategory}">
+			<ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel /></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+			<ItemsControl.ItemTemplate>
+				<DataTemplate>
+					<Border Margin="0,0,4,0" Padding="7,2" HorizontalAlignment="Left" VerticalAlignment="Center"
+						Background="{Binding SoftColor}" BorderBrush="{Binding Color}" BorderThickness="1" CornerRadius="8">
+						<TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ReduxTextPrimaryBrush}"
+							Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+					</Border>
+				</DataTemplate>
+			</ItemsControl.ItemTemplate>
+		</ItemsControl>
 	</DataTemplate>
 	<Style x:Key="GridViewLeftContainerStyle" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}" TargetType="{x:Type GridViewColumnHeader}">
 		<Setter Property="Height" Value="30" />
@@ -1071,7 +1203,7 @@
 	    AllowsColumnReorder="True"
 	    ColumnHeaderContainerStyle="{StaticResource GridViewLeftContainerStyle}">
 		<GridView.Columns>
-			<GridViewColumn Width="40"
+			<GridViewColumn Width="45"
 			    behavior:ScreenReaderHelperBehavior.HelpText="The mod order index column"
 			    behavior:ScreenReaderHelperBehavior.Name="Index"
 			    Header="#"
@@ -1082,22 +1214,23 @@
 					</DataTemplate>
 				</GridViewColumn.CellTemplate>
 			</GridViewColumn>
-			<GridViewColumn Width="400" CellTemplate="{StaticResource ModNameTemplate}">
+			<GridViewColumn Width="300" CellTemplate="{StaticResource ModNameTemplate}">
 				<GridViewColumn.Header>
 					<TextBlock Text="Name" />
 				</GridViewColumn.Header>
 			</GridViewColumn>
-			<GridViewColumn Width="80" Header="Version" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
+			<GridViewColumn Width="90" Header="Version" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
 				<GridViewColumn.CellTemplate>
 					<DataTemplate>
 						<TextBlock Text="{Binding DisplayVersion}" TextAlignment="Left" ToolTip="{Binding DisplayVersion}" />
 					</DataTemplate>
 				</GridViewColumn.CellTemplate>
 			</GridViewColumn>
-			<GridViewColumn Width="100" CellTemplate="{StaticResource ModAuthorTemplate}" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
-			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastUpdatedTemplate}" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
-			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastModifiedTemplate}" Header="Last Modified" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
-			<GridViewColumn Width="90" CellTemplate="{StaticResource ModSourceTemplate}" Header="Source" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="115" CellTemplate="{StaticResource ModLastUpdatedTemplate}" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="115" CellTemplate="{StaticResource ModLastModifiedTemplate}" Header="Last Modified" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="130" CellTemplate="{StaticResource ModAuthorTemplate}" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="135" CellTemplate="{StaticResource ModCategoryTemplate}" Header="Category" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="150" CellTemplate="{StaticResource ModSourceTemplate}" Header="Source" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
 		</GridView.Columns>
 	</GridView>
 	<Style x:Key="GridViewHiddenLeftContainerStyle" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}" TargetType="{x:Type GridViewColumnHeader}">
@@ -1110,7 +1243,7 @@
 	    AllowsColumnReorder="False"
 	    ColumnHeaderContainerStyle="{StaticResource GridViewHiddenLeftContainerStyle}">
 		<GridView.Columns>
-			<GridViewColumn Width="40"
+			<GridViewColumn Width="45"
 			    behavior:ScreenReaderHelperBehavior.HelpText="The mod order index column"
 			    behavior:ScreenReaderHelperBehavior.Name="Index"
 			    Header="#"
@@ -1121,22 +1254,23 @@
 					</DataTemplate>
 				</GridViewColumn.CellTemplate>
 			</GridViewColumn>
-			<GridViewColumn Width="400" CellTemplate="{StaticResource ModNameTemplate}">
+			<GridViewColumn Width="300" CellTemplate="{StaticResource ModNameTemplate}">
 				<GridViewColumn.Header>
 					<TextBlock Text="Name" />
 				</GridViewColumn.Header>
 			</GridViewColumn>
-			<GridViewColumn Width="80" Header="Version" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
+			<GridViewColumn Width="90" Header="Version" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
 				<GridViewColumn.CellTemplate>
 					<DataTemplate>
 						<TextBlock Text="{Binding DisplayVersion}" TextAlignment="Left" ToolTip="{Binding DisplayVersion}" />
 					</DataTemplate>
 				</GridViewColumn.CellTemplate>
 			</GridViewColumn>
-			<GridViewColumn Width="100" CellTemplate="{StaticResource ModAuthorTemplate}" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
-			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastUpdatedTemplate}" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
-			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastModifiedTemplate}" Header="Last Modified" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
-			<GridViewColumn Width="90" CellTemplate="{StaticResource ModSourceTemplate}" Header="Source" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="115" CellTemplate="{StaticResource ModLastUpdatedTemplate}" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="115" CellTemplate="{StaticResource ModLastModifiedTemplate}" Header="Last Modified" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="130" CellTemplate="{StaticResource ModAuthorTemplate}" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="135" CellTemplate="{StaticResource ModCategoryTemplate}" Header="Category" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="150" CellTemplate="{StaticResource ModSourceTemplate}" Header="Source" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
 		</GridView.Columns>
 	</GridView>
 	<GridView x:Key="InactiveModGridView"
@@ -1144,21 +1278,22 @@
 	    AllowsColumnReorder="True"
 	    ColumnHeaderContainerStyle="{StaticResource GridViewLeftContainerStyle}">
 		<GridView.Columns>
-			<GridViewColumn Width="400"
+			<GridViewColumn Width="300"
 			    CellTemplate="{StaticResource ModNameTemplate}"
 			    Header="Name"
 			    HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
-			<GridViewColumn Width="80" Header="Version" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
+			<GridViewColumn Width="90" Header="Version" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
 				<GridViewColumn.CellTemplate>
 					<DataTemplate>
 						<TextBlock Text="{Binding DisplayVersion}" TextAlignment="Left" ToolTip="{Binding DisplayVersion}" />
 					</DataTemplate>
 				</GridViewColumn.CellTemplate>
 			</GridViewColumn>
-			<GridViewColumn Width="100" CellTemplate="{StaticResource ModAuthorTemplate}" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
-			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastUpdatedTemplate}" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
-			<GridViewColumn Width="100" CellTemplate="{StaticResource ModLastModifiedTemplate}" Header="Last Modified" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
-			<GridViewColumn Width="90" CellTemplate="{StaticResource ModSourceTemplate}" Header="Source" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="115" CellTemplate="{StaticResource ModLastUpdatedTemplate}" Header="Last Updated" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="115" CellTemplate="{StaticResource ModLastModifiedTemplate}" Header="Last Modified" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="130" CellTemplate="{StaticResource ModAuthorTemplate}" Header="Author" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="135" CellTemplate="{StaticResource ModCategoryTemplate}" Header="Category" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
+			<GridViewColumn Width="150" CellTemplate="{StaticResource ModSourceTemplate}" Header="Source" HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}" />
 		</GridView.Columns>
 	</GridView>
 

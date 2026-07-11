@@ -10,6 +10,7 @@ using GongSolutions.Wpf.DragDrop.Utilities;
 using ReactiveMarbles.ObservableEvents;
 
 using System.ComponentModel;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
@@ -39,22 +40,257 @@ public class HorizontalModLayoutBase : ReactiveUserControl<MainWindowViewModel> 
 /// </summary>
 public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayout
 {
+	private const string CategoryAssignmentMenuTag = "ReduxCategoryAssignment";
+	private const string VisualDividerMenuTag = "ReduxVisualDivider";
 	private const double DefaultModDetailsRowHeight = 295;
 	private const double MinimumExpandedModDetailsRowHeight = 295;
 	private const double CollapsedModDetailsRowHeight = 58;
 	private const double ModDetailsSplitterHeight = 6;
+	private const double CollapsedCategoriesWidth = 52;
+	private const double MinimumExpandedCategoriesWidth = 180;
+	private const double DefaultExpandedCategoriesWidth = 220;
 
 	private object _focusedList = null;
 	private double _lastExpandedModDetailsRowHeight = DefaultModDetailsRowHeight;
+	private double _lastExpandedCategoriesWidth = DefaultExpandedCategoriesWidth;
 	private readonly Dictionary<GridViewColumn, double> _visibleModListColumnWidths = new();
 	private static readonly string[] OptionalModListColumns =
 	[
 		"Version",
-		"Author",
 		"Last Updated",
 		"Last Modified",
+		"Author",
+		"Category",
 		"Source"
 	];
+
+	private MessageBoxResult ShowCategoryMessage(string message, string caption, MessageBoxButton buttons, MessageBoxImage image)
+	{
+		var owner = Window.GetWindow(this) as MainWindow ?? MainWindow.Self;
+		return Xceed.Wpf.Toolkit.MessageBox.Show(owner, message, caption, buttons, image,
+			buttons == MessageBoxButton.YesNo ? MessageBoxResult.No : MessageBoxResult.OK,
+			owner?.MessageBoxStyle);
+	}
+
+	private void CategoriesContextMenu_Opened(object sender, RoutedEventArgs e)
+	{
+		ShowEmptyCategoriesMenuItem.IsChecked = !ViewModel.Settings.HideEmptyModCategories;
+		SaveCategoryFilterMenuItem.IsChecked = ViewModel.Settings.SaveModCategoryFilterBetweenSessions;
+		DisableNewModIndicatorsMenuItem.IsChecked = ViewModel.Settings.DisableNewModCategoryIndicators;
+		ChangeCategoryColorMenuItem.IsEnabled = !String.IsNullOrWhiteSpace(ViewModel.SelectedModCategory) &&
+			!ViewModel.SelectedModCategory.Equals(MainWindowViewModel.AllModsCategory, StringComparison.OrdinalIgnoreCase);
+
+		EnableCategoriesMenuItem.Items.Clear();
+		foreach (var category in ViewModel.GetAllModCategories())
+		{
+			var item = new MenuItem { Header = category, IsCheckable = true, IsChecked = ViewModel.IsModCategoryEnabled(category) };
+			item.Click += (_, _) => ViewModel.SetModCategoryEnabled(category, item.IsChecked);
+			EnableCategoriesMenuItem.Items.Add(item);
+		}
+
+		DeleteCustomCategoryMenuItem.Items.Clear();
+		foreach (var category in ViewModel.Settings.CustomModCategories ?? Enumerable.Empty<string>())
+		{
+			var item = new MenuItem { Header = category };
+			item.Click += (_, _) =>
+			{
+				var result = ShowCategoryMessage(
+					$"Delete the custom category '{category}'?\n\nThe mods themselves and their load-order positions will not be changed.",
+					"Delete Custom Category", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+				if (result == MessageBoxResult.Yes) ViewModel.DeleteCustomModCategory(category);
+			};
+			DeleteCustomCategoryMenuItem.Items.Add(item);
+		}
+		DeleteCustomCategoryMenuItem.IsEnabled = DeleteCustomCategoryMenuItem.Items.Count > 0;
+	}
+
+	private void DisableNewModIndicatorsMenuItem_Click(object sender, RoutedEventArgs e) =>
+		ViewModel.SetNewModCategoryIndicatorsDisabled(DisableNewModIndicatorsMenuItem.IsChecked);
+
+	private void CategoryListBox_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+	{
+		if (e.OriginalSource is DependencyObject source && source.FindVisualParent<ListBoxItem>()?.DataContext is ModCategoryFilterItem category)
+			ViewModel.MarkModCategorySeen(category.Name);
+	}
+
+	private void SaveCategoryFilterMenuItem_Click(object sender, RoutedEventArgs e)
+	{
+		ViewModel.Settings.SaveModCategoryFilterBetweenSessions = SaveCategoryFilterMenuItem.IsChecked;
+		ViewModel.Settings.SavedModCategoryFilter = SaveCategoryFilterMenuItem.IsChecked
+			? ViewModel.SelectedModCategory
+			: MainWindowViewModel.AllModsCategory;
+		ViewModel.SaveSettings();
+	}
+
+	private void ShowEmptyCategoriesMenuItem_Click(object sender, RoutedEventArgs e)
+	{
+		ViewModel.Settings.HideEmptyModCategories = !ShowEmptyCategoriesMenuItem.IsChecked;
+		ViewModel.SaveSettings();
+	}
+
+	private void AddCustomCategoryMenuItem_Click(object sender, RoutedEventArgs e)
+	{
+		var dialog = new CategoryNameDialog(color: ViewModel.GetSuggestedCustomCategoryColor(), savedColors: ViewModel.Settings.SavedCategoryColors) { Owner = Window.GetWindow(this) };
+		var result = dialog.ShowDialog();
+		SaveCategoryDialogColors(dialog);
+		if (result == true && !ViewModel.TryAddCustomModCategory(dialog.CategoryName, dialog.CategoryColor, out var error))
+		{
+			ShowCategoryMessage(error, "Add Mod Category", MessageBoxButton.OK, MessageBoxImage.Information);
+		}
+	}
+
+	private void SaveCategoryDialogColors(CategoryNameDialog dialog)
+	{
+		var colors = dialog.SavedColors.ToList();
+		if ((ViewModel.Settings.SavedCategoryColors ?? new List<string>()).SequenceEqual(colors, StringComparer.OrdinalIgnoreCase)) return;
+		ViewModel.Settings.SavedCategoryColors = colors;
+		ViewModel.SaveSettings();
+	}
+
+	private void ChangeCategoryColorMenuItem_Click(object sender, RoutedEventArgs e)
+	{
+		var category = ViewModel.SelectedModCategory;
+		if (String.IsNullOrWhiteSpace(category) || category.Equals(MainWindowViewModel.AllModsCategory, StringComparison.OrdinalIgnoreCase)) return;
+		var dialog = new CategoryNameDialog(category, ViewModel.GetCurrentCategoryColor(category), false, ViewModel.Settings.SavedCategoryColors) { Owner = Window.GetWindow(this) };
+		var result = dialog.ShowDialog();
+		SaveCategoryDialogColors(dialog);
+		if (result == true && !ViewModel.TrySetCategoryColor(category, dialog.CategoryColor, out var error))
+		{
+			ShowCategoryMessage(error, "Change Category Color", MessageBoxButton.OK, MessageBoxImage.Information);
+		}
+	}
+
+	private void ModListView_ContextMenuOpening(object sender, ContextMenuEventArgs e)
+	{
+		if (sender is not ModListView listView || e.OriginalSource is not DependencyObject source) return;
+		var item = source.FindVisualParent<ListViewItem>();
+		var mod = item?.DataContext as DivinityModData;
+		var menu = item?.ContextMenu ?? listView.ContextMenu;
+		if (menu == null) return;
+		foreach (var hiddenEntry in menu.Items.OfType<FrameworkElement>().Where(entry => Equals(entry.Tag, "ReduxHiddenForDivider")).ToList())
+		{
+			hiddenEntry.Tag = null;
+			hiddenEntry.Visibility = Visibility.Visible;
+		}
+
+		if (mod == null)
+		{
+			menu.Items.Clear();
+			var point = Mouse.GetPosition(listView);
+			var insertIndex = GetVisualInsertionIndex(listView, point);
+			var activeList = listView == ActiveModsListView;
+			var addHere = new MenuItem
+			{
+				Header = activeList ? "Insert Separator Here..." : "Insert Separator (Inactive mods do not retain a load order)",
+				IsEnabled = activeList,
+				ToolTip = activeList ? null : "Inactive mods do not retain a load order."
+			};
+			addHere.Click += (_, _) => ShowAddVisualDividerDialog(activeList, insertIndex);
+			menu.Items.Add(addHere);
+			return;
+		}
+
+		if (mod.IsVisualDivider)
+		{
+			foreach (var oldGenerated in menu.Items.OfType<MenuItem>().Where(entry => Equals(entry.Tag, VisualDividerMenuTag)).ToList()) menu.Items.Remove(oldGenerated);
+			foreach (var entry in menu.Items.OfType<FrameworkElement>().ToList())
+			{
+				entry.Tag = "ReduxHiddenForDivider";
+				entry.Visibility = Visibility.Collapsed;
+			}
+			var edit = new MenuItem { Header = "Edit Separator...", Tag = VisualDividerMenuTag };
+			edit.Click += (_, _) => ShowEditVisualDividerDialog(mod);
+			var remove = new MenuItem { Header = "Remove Separator", Tag = VisualDividerMenuTag };
+			remove.Click += (_, _) => ViewModel.RemoveVisualDivider(mod);
+			menu.Items.Add(edit);
+			menu.Items.Add(remove);
+			return;
+		}
+
+		foreach (var generatedItem in menu.Items.OfType<MenuItem>().Where(entry => Equals(entry.Tag, CategoryAssignmentMenuTag)).ToList())
+		{
+			menu.Items.Remove(generatedItem);
+		}
+
+		var categoryMenu = new MenuItem { Header = "Assign Category", Tag = CategoryAssignmentMenuTag };
+		var automaticItem = new MenuItem
+		{
+			Header = "Automatic",
+			IsCheckable = true,
+			IsChecked = !ViewModel.HasModCategoryOverride(mod)
+		};
+		automaticItem.Click += (_, _) => ViewModel.ToggleModCategoryAssignment(mod, null);
+		categoryMenu.Items.Add(automaticItem);
+		categoryMenu.Items.Add(new Separator());
+
+		foreach (var category in ViewModel.GetAssignableModCategories())
+		{
+			var categoryItem = new MenuItem
+			{
+				Header = category,
+				IsCheckable = true,
+				IsChecked = ViewModel.HasModCategoryOverride(mod, category)
+			};
+			categoryItem.Click += (_, _) => ViewModel.ToggleModCategoryAssignment(mod, category);
+			categoryMenu.Items.Add(categoryItem);
+		}
+
+		menu.Items.Insert(Math.Min(2, menu.Items.Count), categoryMenu);
+
+		foreach (var generatedItem in menu.Items.OfType<MenuItem>().Where(entry => Equals(entry.Tag, VisualDividerMenuTag)).ToList())
+		{
+			menu.Items.Remove(generatedItem);
+		}
+
+		var activeModList = listView == ActiveModsListView;
+		var dividerMenu = new MenuItem
+		{
+			Header = activeModList ? "Separator" : "Separator (Inactive mods do not retain a load order)",
+			Tag = VisualDividerMenuTag,
+			IsEnabled = activeModList,
+			ToolTip = activeModList ? null : "Inactive mods do not retain a load order."
+		};
+		var visualIndex = listView.Items.IndexOf(mod);
+		var addAbove = new MenuItem { Header = "Add Separator Above..." };
+		addAbove.Click += (_, _) => ShowAddVisualDividerDialog(listView == ActiveModsListView, visualIndex);
+		var addBelow = new MenuItem { Header = "Add Separator Below..." };
+		addBelow.Click += (_, _) => ShowAddVisualDividerDialog(listView == ActiveModsListView, visualIndex + 1);
+		dividerMenu.Items.Add(addAbove);
+		dividerMenu.Items.Add(addBelow);
+		menu.Items.Insert(Math.Min(3, menu.Items.Count), dividerMenu);
+	}
+
+	private int GetVisualInsertionIndex(ListView listView, Point point)
+	{
+		for (var index = 0; index < listView.Items.Count; index++)
+		{
+			if (listView.ItemContainerGenerator.ContainerFromIndex(index) is not ListViewItem container) continue;
+			var top = container.TranslatePoint(new Point(0, 0), listView).Y;
+			if (point.Y < top + container.ActualHeight / 2) return index;
+		}
+		return listView.Items.Count;
+	}
+
+	private void ShowAddVisualDividerDialog(bool activeList, int position)
+	{
+		if (!activeList) return;
+		var dialog = new CategoryNameDialog(color: ViewModel.GetSuggestedCustomCategoryColor(), savedColors: ViewModel.Settings.SavedCategoryColors, visualDividerMode: true)
+			{ Owner = Window.GetWindow(this) };
+		if (dialog.ShowDialog() != true) { SaveCategoryDialogColors(dialog); return; }
+		SaveCategoryDialogColors(dialog);
+		ViewModel.AddVisualDivider(activeList, position, dialog.CategoryName, dialog.CategoryColor);
+	}
+
+	private void ShowEditVisualDividerDialog(DivinityModData item)
+	{
+		var divider = ViewModel.GetVisualDivider(item);
+		if (divider == null) return;
+		var dialog = new CategoryNameDialog(divider.Title, divider.Color, true, ViewModel.Settings.SavedCategoryColors, true)
+			{ Owner = Window.GetWindow(this) };
+		if (dialog.ShowDialog() != true) { SaveCategoryDialogColors(dialog); return; }
+		SaveCategoryDialogColors(dialog);
+		ViewModel.UpdateVisualDivider(item, dialog.CategoryName, dialog.CategoryColor);
+	}
 
 	public ModListView ActiveModsView => ActiveModsListView;
 	public ModListView InactiveModsView => InactiveModsListView;
@@ -110,6 +346,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 
 	private void SetupListView(ListView listView)
 	{
+		listView.AddHandler(ButtonBase.ClickEvent, new RoutedEventHandler(ModListView_ButtonClick));
 		listView.InputBindings.Add(new KeyBinding(ApplicationCommands.SelectAll, new KeyGesture(Key.A, ModifierKeys.Control)));
 		listView.CommandBindings.Add(new CommandBinding(ApplicationCommands.SelectAll, (_sender, _e) =>
 		{
@@ -252,17 +489,26 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		}
 	}
 
+	private void ModListView_ButtonClick(object sender, RoutedEventArgs e)
+	{
+		if (e.OriginalSource is ButtonBase { Tag: "ReduxDividerToggle", DataContext: DivinityModData item } && item.IsVisualDivider)
+		{
+			ViewModel.ToggleVisualDividerCollapsed(item);
+			e.Handled = true;
+		}
+	}
+
 	private DivinityModData GetSelectedModForDetails()
 	{
-		return ActiveModsListView.SelectedItems.OfType<DivinityModData>().LastOrDefault()
-			?? InactiveModsListView.SelectedItems.OfType<DivinityModData>().LastOrDefault()
+		return ActiveModsListView.SelectedItems.OfType<DivinityModData>().LastOrDefault(item => !item.IsVisualDivider)
+			?? InactiveModsListView.SelectedItems.OfType<DivinityModData>().LastOrDefault(item => !item.IsVisualDivider)
 			?? ForceLoadedModsListView.SelectedItems.OfType<DivinityModData>().LastOrDefault();
 	}
 
 	private void UpdateModDetailsSelection(SelectionChangedEventArgs e)
 	{
 		var detailsWereVisible = ModDetailsPanel.Visibility == Visibility.Visible;
-		var selectedMod = e?.AddedItems?.OfType<DivinityModData>().LastOrDefault()
+		var selectedMod = e?.AddedItems?.OfType<DivinityModData>().LastOrDefault(item => !item.IsVisualDivider)
 			?? GetSelectedModForDetails();
 
 		if (selectedMod == null)
@@ -330,6 +576,26 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 	private void ModDetailsGridSplitter_DragCompleted(object sender, DragCompletedEventArgs e)
 	{
 		Dispatcher.BeginInvoke(new Action(RememberExpandedModDetailsHeight));
+	}
+
+	private void UpdateCategoriesLayout(bool isExpanded)
+	{
+		if (!isExpanded)
+		{
+			if (CategoriesColumn.ActualWidth >= MinimumExpandedCategoriesWidth)
+				_lastExpandedCategoriesWidth = CategoriesColumn.ActualWidth;
+
+			CategoriesGridSplitter.IsEnabled = false;
+			CategoriesColumn.MinWidth = CollapsedCategoriesWidth;
+			CategoriesColumn.MaxWidth = CollapsedCategoriesWidth;
+			CategoriesColumn.Width = new GridLength(CollapsedCategoriesWidth);
+			return;
+		}
+
+		CategoriesColumn.MaxWidth = Double.PositiveInfinity;
+		CategoriesColumn.MinWidth = MinimumExpandedCategoriesWidth;
+		CategoriesColumn.Width = new GridLength(Math.Max(MinimumExpandedCategoriesWidth, _lastExpandedCategoriesWidth));
+		CategoriesGridSplitter.IsEnabled = true;
 	}
 
 	private IDisposable updatingActiveViewSelection;
@@ -572,6 +838,9 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		{
 			if (ViewModel != null)
 			{
+				d(this.ViewModel.WhenAnyValue(x => x.IsCategoriesExpanded)
+					.ObserveOn(RxApp.MainThreadScheduler)
+					.Subscribe(UpdateCategoriesLayout));
 				d(this.Events().KeyUp.Select(e => e.Key != Key.System ? e.Key : e.SystemKey).Subscribe(ViewModel.OnKeyUp));
 				d(this.Events().KeyDown.Select(e => e.Key != Key.System ? e.Key : e.SystemKey).Subscribe(key =>
 				{
@@ -628,8 +897,8 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				ViewModel.Layout = this;
 				ApplyModListColumnVisibility();
 
-				d(this.OneWayBind(ViewModel, vm => vm.ActiveMods, v => v.ActiveModsListView.ItemsSource));
-				d(this.OneWayBind(ViewModel, vm => vm.InactiveMods, v => v.InactiveModsListView.ItemsSource));
+				d(this.OneWayBind(ViewModel, vm => vm.DisplayActiveMods, v => v.ActiveModsListView.ItemsSource));
+				d(this.OneWayBind(ViewModel, vm => vm.DisplayInactiveMods, v => v.InactiveModsListView.ItemsSource));
 				d(this.OneWayBind(ViewModel, vm => vm.ForceLoadedMods, v => v.ForceLoadedModsListView.ItemsSource));
 
 				d(this.OneWayBind(ViewModel, vm => vm.HasForceLoadedMods, v => v.ForceLoadedModsListView.Visibility, BoolToVisibilityConverter.FromBool));
@@ -857,6 +1126,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 			"Author" => ViewModel.Settings.ShowModListAuthorColumn,
 			"Last Updated" => ViewModel.Settings.ShowModListLastUpdatedColumn,
 			"Last Modified" => ViewModel.Settings.ShowModListLastModifiedColumn,
+			"Category" => ViewModel.Settings.ShowModListCategoryColumn,
 			"Source" => ViewModel.Settings.ShowModListSourceColumn,
 			_ => true
 		};
@@ -883,6 +1153,9 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 			case "Last Modified":
 				ViewModel.Settings.ShowModListLastModifiedColumn = isVisible;
 				break;
+			case "Category":
+				ViewModel.Settings.ShowModListCategoryColumn = isVisible;
+				break;
 			case "Source":
 				ViewModel.Settings.ShowModListSourceColumn = isVisible;
 				break;
@@ -893,13 +1166,161 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 	{
 		return columnName switch
 		{
-			"Version" => 80,
-			"Author" => 100,
-			"Last Updated" => 100,
-			"Last Modified" => 100,
-			"Source" => 90,
+			"#" => 45,
+			"Name" => 300,
+			"Version" => 90,
+			"Last Updated" => 115,
+			"Last Modified" => 115,
+			"Author" => 130,
+			"Category" => 135,
+			"Source" => 150,
 			_ => 100
 		};
+	}
+
+	private static double GetFallbackMinimumColumnWidth(string columnName)
+	{
+		return columnName switch
+		{
+			"#" => 35,
+			"Name" => 100,
+			"Version" => 60,
+			"Last Updated" => 70,
+			"Last Modified" => 75,
+			"Author" => 70,
+			"Category" => 70,
+			"Source" => 90,
+			_ => 60
+		};
+	}
+
+	private static double MeasureColumnText(ModListView listView, string text, double? fontSize = null, FontWeight? fontWeight = null)
+	{
+		if (String.IsNullOrEmpty(text))
+		{
+			return 0;
+		}
+
+		return ElementHelper.MeasureText(listView, text,
+			listView.FontFamily,
+			listView.FontStyle,
+			fontWeight ?? listView.FontWeight,
+			listView.FontStretch,
+			fontSize ?? listView.FontSize).Width;
+	}
+
+	private static int GetModNameIconCount(DivinityModData mod)
+	{
+		var count = 0;
+		if (mod.OsirisStatusVisibility == Visibility.Visible) count++;
+		if (mod.ExtenderStatusVisibility == Visibility.Visible) count++;
+		if (mod.ToolkitIconVisibility == Visibility.Visible) count++;
+		if (mod.HasInvalidUUIDVisibility == Visibility.Visible) count++;
+		if (mod.MissingDependencyIconVisibility == Visibility.Visible) count++;
+		return count;
+	}
+
+	private double GetContentMinimumColumnWidth(ModListView listView, string columnName)
+	{
+		var headerWidth = MeasureColumnText(listView, columnName, fontWeight: FontWeights.SemiBold) + 28;
+		var contentWidth = 0d;
+
+		foreach (var mod in listView.Items.OfType<DivinityModData>().Where(item => !item.IsVisualDivider && item.Visibility == Visibility.Visible))
+		{
+			double candidateWidth;
+			switch (columnName)
+			{
+				case "#":
+					candidateWidth = MeasureColumnText(listView, mod.Index.ToString(CultureInfo.CurrentCulture)) + 20;
+					break;
+				case "Name":
+					var displayName = mod.NexusModsInformationVisibility == Visibility.Visible && !String.IsNullOrWhiteSpace(mod.NexusModsData?.Name)
+						? mod.NexusModsData.Name
+						: mod.DisplayName;
+					candidateWidth = MeasureColumnText(listView, displayName) + 28 + (GetModNameIconCount(mod) * 20);
+					break;
+				case "Version":
+					candidateWidth = MeasureColumnText(listView, mod.DisplayVersion) + 24;
+					break;
+				case "Last Updated":
+					candidateWidth = MeasureColumnText(listView, mod.DisplayLastUpdated?.ToString(DivinityApp.DateTimeColumnFormat, CultureInfo.CurrentCulture)) + 24;
+					break;
+				case "Last Modified":
+					candidateWidth = MeasureColumnText(listView, mod.LastModified?.ToString(DivinityApp.DateTimeColumnFormat, CultureInfo.CurrentCulture)) + 24;
+					break;
+				case "Author":
+					var author = mod.NexusModsInformationVisibility == Visibility.Visible && !String.IsNullOrWhiteSpace(mod.NexusModsData?.Author)
+						? mod.NexusModsData.Author
+						: mod.Author;
+					candidateWidth = MeasureColumnText(listView, author) + 24;
+					break;
+				case "Category":
+					candidateWidth = mod.DisplayCategories?.Sum(category => MeasureColumnText(listView, category.Name, 11, FontWeights.SemiBold) + 19) + 8 ?? 8;
+					break;
+				case "Source":
+					candidateWidth = MeasureColumnText(listView, mod.DisplaySource, 11, FontWeights.SemiBold) + 55;
+					if (mod.Metadata.ModioWarningVisibility == Visibility.Visible && ViewModel?.Settings.HideModioSourceWarningIcons == false)
+					{
+						candidateWidth += 22;
+					}
+					break;
+				default:
+					candidateWidth = GetFallbackMinimumColumnWidth(columnName);
+					break;
+			}
+
+			contentWidth = Math.Max(contentWidth, candidateWidth);
+		}
+
+		return Math.Ceiling(Math.Max(headerWidth, Math.Max(contentWidth, GetFallbackMinimumColumnWidth(columnName))));
+	}
+
+	private void ClampModListColumnWidth(ModListView listView, GridViewColumn column)
+	{
+		if (column == null || column.Width <= 0)
+		{
+			return;
+		}
+
+		var columnName = GetColumnName(column);
+		var minimumWidth = listView != null
+			? GetContentMinimumColumnWidth(listView, columnName)
+			: GetFallbackMinimumColumnWidth(columnName);
+		if (column.Width < minimumWidth)
+		{
+			column.Width = minimumWidth;
+		}
+	}
+
+	private void EnsureReadableColumnWidths(ModListView listView)
+	{
+		if (listView?.View is not GridView gridView)
+		{
+			return;
+		}
+
+		foreach (var column in gridView.Columns)
+		{
+			ClampModListColumnWidth(listView, column);
+		}
+	}
+
+	private void ListViewColumnHeader_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+	{
+		if (e.OriginalSource is not DependencyObject source)
+		{
+			return;
+		}
+
+		var header = source as GridViewColumnHeader ?? source.FindVisualParent<GridViewColumnHeader>();
+		if (header?.Column == null)
+		{
+			return;
+		}
+
+		var resizedColumn = header.Column;
+		var listView = sender as ModListView ?? header.FindVisualParent<ModListView>();
+		Dispatcher.BeginInvoke(new Action(() => ClampModListColumnWidth(listView, resizedColumn)), System.Windows.Threading.DispatcherPriority.Background);
 	}
 
 	private void SetGridViewColumnVisibility(GridView gridView, string columnName, bool isVisible)
@@ -918,6 +1339,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 					? storedWidth
 					: GetDefaultColumnWidth(columnName);
 			}
+			ClampModListColumnWidth(null, column);
 		}
 		else
 		{
@@ -1073,12 +1495,13 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 
 	public void Sort(string sortBy, ListSortDirection direction, object sender)
 	{
+		var requestedLoadOrder = sortBy == "#";
 		if (sortBy == "Version") sortBy = "Version.Version";
-		if (sortBy == "#") sortBy = "Index";
 		if (sortBy == "Name") sortBy = "DisplayName";
 		if (sortBy == "Modes") sortBy = "Targets";
 		if (sortBy == "Last Updated") sortBy = "DisplayLastUpdated";
 		if (sortBy == "Last Modified") sortBy = "LastModified";
+		if (sortBy == "Category") sortBy = "DisplayCategory";
 		if (sortBy == "Source") sortBy = "DisplaySource";
 
 		try
@@ -1088,6 +1511,27 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 			  CollectionViewSource.GetDefaultView(lv.ItemsSource);
 
 			dataView.SortDescriptions.Clear();
+			if (requestedLoadOrder)
+			{
+				// The # column represents the real load order. Rebuild the Redux-only
+				// separator rows in their saved visual slots instead of sorting those
+				// non-mod rows by a synthetic Index value.
+				dataView.Filter = null;
+				ViewModel?.RefreshVisualDividers();
+				dataView.Refresh();
+				return;
+			}
+
+			// Separators describe the real load-order view and have no meaningful
+			// position in an alphabetical/date/metadata sort. Hide only those
+			// Redux visual rows while sorted; the source collection and exported
+			// load order are not modified.
+			if (lv == ActiveModsListView || lv == InactiveModsListView)
+			{
+				foreach (var mod in lv.ItemsSource.OfType<DivinityModData>().Where(item => !item.IsVisualDivider))
+					mod.IsHiddenByVisualDivider = false;
+				dataView.Filter = item => item is not DivinityModData mod || !mod.IsVisualDivider;
+			}
 			SortDescription sd = new SortDescription(sortBy, direction);
 			dataView.SortDescriptions.Add(sd);
 			dataView.Refresh();
@@ -1105,6 +1549,10 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		if (dataView != null)
 		{
 			dataView.Refresh();
+		}
+		if (target is ModListView modListView)
+		{
+			Dispatcher.BeginInvoke(new Action(() => EnsureReadableColumnWidths(modListView)), System.Windows.Threading.DispatcherPriority.Background);
 		}
 	}
 

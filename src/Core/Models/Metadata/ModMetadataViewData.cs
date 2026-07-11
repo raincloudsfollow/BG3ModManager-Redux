@@ -75,6 +75,19 @@ public sealed class ModMetadataViewData : ReactiveObject
 		: $"Version {Version}";
 
 	public string AuthorLabel => $"By {Author}";
+	public string AuthorPageUrl
+	{
+		get
+		{
+			if (SourceType == ModSourceType.NEXUSMODS && !String.IsNullOrWhiteSpace(_mod.NexusModsData?.Author))
+				return $"https://next.nexusmods.com/profile/{Uri.EscapeDataString(_mod.NexusModsData.Author)}";
+			// mod.io author profiles are intentionally presented as plain text in Redux.
+			// The mod page remains the reliable clickable destination for mod.io metadata.
+			return String.Empty;
+		}
+	}
+	public Visibility AuthorPageVisibility => !String.IsNullOrWhiteSpace(AuthorPageUrl) ? Visibility.Visible : Visibility.Collapsed;
+	public Visibility LocalAuthorVisibility => AuthorPageVisibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
 
 	public string UpdatedLabel
 	{
@@ -158,6 +171,9 @@ public sealed class ModMetadataViewData : ReactiveObject
 		this.RaisePropertyChanged(nameof(LinkStatus));
 		this.RaisePropertyChanged(nameof(VersionLabel));
 		this.RaisePropertyChanged(nameof(AuthorLabel));
+		this.RaisePropertyChanged(nameof(AuthorPageUrl));
+		this.RaisePropertyChanged(nameof(AuthorPageVisibility));
+		this.RaisePropertyChanged(nameof(LocalAuthorVisibility));
 		this.RaisePropertyChanged(nameof(UpdatedLabel));
 	}
 }
