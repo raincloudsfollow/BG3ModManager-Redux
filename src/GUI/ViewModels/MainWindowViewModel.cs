@@ -1787,7 +1787,12 @@ Directory the zip will be extracted to:
 			var mod = mods.Lookup(activeMod.UUID);
 			if (mod.HasValue)
 			{
-				currentOrder.Add(mod.Value);
+				var installedMod = mod.Value;
+				if (installedMod.PublishHandle == 0 && activeMod.PublishHandle > 0)
+				{
+					installedMod.PublishHandle = activeMod.PublishHandle;
+				}
+				currentOrder.Add(installedMod);
 			}
 			else
 			{
@@ -2371,6 +2376,71 @@ Directory the zip will be extracted to:
 		});
 	}
 
+	private void LoadModioMetadataBackground()
+	{
+		if (String.IsNullOrWhiteSpace(Settings.ModioAPIKey))
+		{
+			return;
+		}
+
+		var loadedUserMods = UserMods.ToList();
+		RxApp.TaskpoolScheduler.ScheduleAsync(async (scheduler, cancellationToken) =>
+		{
+			try
+			{
+				UpdateHandler.Modio.APIKey = Settings.ModioAPIKey;
+				UpdateHandler.Modio.IsEnabled = true;
+
+				var cachedData = await UpdateHandler.Modio.LoadCacheAsync(Version.ToString(), cancellationToken);
+				if (cachedData != null)
+				{
+					UpdateHandler.Modio.CacheData = cachedData;
+					await Observable.Start(() =>
+					{
+						foreach (var mod in loadedUserMods)
+						{
+							if (cachedData.Mods.TryGetValue(mod.UUID, out var modioData))
+							{
+								mod.ModioData.Update(modioData);
+							}
+						}
+					}, RxApp.MainThreadScheduler);
+				}
+
+				if (await UpdateHandler.Modio.Update(loadedUserMods, cancellationToken))
+				{
+					await UpdateHandler.Modio.SaveCacheAsync(false, Version.ToString(), cancellationToken);
+				}
+
+				await Observable.Start(() => ShowModioSupportWarningIfRequired(loadedUserMods), RxApp.MainThreadScheduler);
+			}
+			catch (Exception ex)
+			{
+				DivinityApp.Log($"Error loading mod.io metadata:\n{ex}");
+			}
+		});
+	}
+
+	private void ShowModioSupportWarningIfRequired(IEnumerable<DivinityModData> loadedUserMods)
+	{
+		if (Settings.ModioSupportWarningAcknowledged
+			|| !loadedUserMods.Any(mod => mod.Metadata.SourceType == ModSourceType.MODIO))
+		{
+			return;
+		}
+
+		var warningWindow = new ModioSupportWarningWindow
+		{
+			Owner = Window
+		};
+
+		if (warningWindow.ShowDialog() == true)
+		{
+			Settings.ModioSupportWarningAcknowledged = true;
+			SaveSettings();
+		}
+	}
+
 	private async Task CheckForEmptyOrderAsync(IScheduler sch, CancellationToken token)
 	{
 		if (SelectedProfile == null) return;
@@ -2623,6 +2693,7 @@ Directory the zip will be extracted to:
 			IsLoadingOrder = false;
 			IsInitialized = true;
 			LoadNexusModsMetadataBackground();
+			LoadModioMetadataBackground();
 
 			if (AppSettings.FeatureEnabled("ScriptExtender"))
 			{

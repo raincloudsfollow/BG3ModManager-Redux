@@ -28,6 +28,7 @@
 	<ResourceDictionary.MergedDictionaries>
 		<ResourceDictionary Source="DefaultStyles/ComboBox.xaml" />
 	</ResourceDictionary.MergedDictionaries>
+	<FontFamily x:Key="ReduxFontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
 	<!--  Bridge legacy AdonisUI controls into the Redux semantic palette.  -->
 	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.ForegroundBrush}" Color="{DynamicResource ReduxTextPrimaryColor}" />
 	<SolidColorBrush x:Key="{x:Static adonisUI:Brushes.DisabledForegroundBrush}" Color="{DynamicResource ReduxTextMutedColor}" />
@@ -990,9 +991,61 @@
 		    ToolTip="{Binding LastModified, StringFormat={x:Static dapp:DivinityApp.DateTimeTooltipFormat}}" />
 	</DataTemplate>
 	<DataTemplate x:Key="ModSourceTemplate" DataType="{x:Type data:DivinityModData}">
-		<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
-		    Text="{Binding DisplaySource}"
-		    ToolTip="{Binding DisplaySource, StringFormat='Metadata source: {0}'}" />
+		<StackPanel Orientation="Horizontal">
+			<TextBlock VerticalAlignment="Center"
+			    Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+			    Text="{Binding DisplaySource}"
+			    ToolTip="{Binding DisplaySource, StringFormat='Metadata source: {0}'}" />
+			<TextBlock Margin="6,0,0,0"
+			    VerticalAlignment="Center"
+			    FontFamily="Segoe UI Symbol"
+			    FontSize="15"
+			    Foreground="{DynamicResource ReduxWarningBrush}"
+			    Text="&#x26A0;">
+				<TextBlock.ToolTip>
+					<ToolTip Placement="Mouse" HorizontalOffset="12" VerticalOffset="10">
+						<Border MaxWidth="390"
+							Padding="12,10"
+							Background="{DynamicResource ReduxSurfaceElevatedBrush}"
+							BorderBrush="{DynamicResource ReduxWarningBrush}"
+							BorderThickness="1"
+							CornerRadius="8">
+							<StackPanel>
+								<TextBlock FontFamily="{DynamicResource ReduxFontFamily}"
+									FontSize="13"
+									FontWeight="SemiBold"
+									Foreground="{DynamicResource ReduxWarningBrush}"
+									Text="Limited mod.io support" />
+								<TextBlock Margin="0,5,0,0"
+									FontFamily="{DynamicResource ReduxFontFamily}"
+									Foreground="{DynamicResource ReduxTextPrimaryBrush}"
+									Text="Subscribed mods can be restored or redownloaded by BG3 after Redux deletes the local file."
+									TextWrapping="Wrap" />
+								<TextBlock Margin="0,6,0,0"
+									FontFamily="{DynamicResource ReduxFontFamily}"
+									Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+									Text="Unsubscribe through mod.io or BG3's in-game Mod Manager when removing the mod. Manual/local or Nexus Mods installations are recommended for predictable file management."
+									TextWrapping="Wrap" />
+							</StackPanel>
+						</Border>
+					</ToolTip>
+				</TextBlock.ToolTip>
+				<TextBlock.Style>
+					<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
+						<Setter Property="Visibility" Value="Collapsed" />
+						<Style.Triggers>
+							<MultiDataTrigger>
+								<MultiDataTrigger.Conditions>
+									<Condition Binding="{Binding Metadata.ModioWarningVisibility}" Value="Visible" />
+									<Condition Binding="{Binding DataContext.Settings.HideModioSourceWarningIcons, RelativeSource={RelativeSource AncestorType={x:Type UserControl}}}" Value="False" />
+								</MultiDataTrigger.Conditions>
+								<Setter Property="Visibility" Value="Visible" />
+							</MultiDataTrigger>
+						</Style.Triggers>
+					</Style>
+				</TextBlock.Style>
+			</TextBlock>
+		</StackPanel>
 	</DataTemplate>
 	<Style x:Key="GridViewLeftContainerStyle" BasedOn="{StaticResource {x:Type GridViewColumnHeader}}" TargetType="{x:Type GridViewColumnHeader}">
 		<Setter Property="Height" Value="30" />

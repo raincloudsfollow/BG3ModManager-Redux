@@ -197,10 +197,40 @@
 						Width="{Binding ActualHeight, RelativeSource={RelativeSource Self}, Converter={StaticResource ModDetailsMediaWidthConverter}}"
 						VerticalAlignment="Stretch"
 						Background="{DynamicResource ReduxListInteriorBrush}"
-						BorderBrush="{DynamicResource ReduxBorderBrush}"
 						BorderThickness="1"
 						ClipToBounds="True"
 						CornerRadius="7">
+						<Border.InputBindings>
+							<MouseBinding Command="{Binding Path=OpenModGalleryPageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
+								CommandParameter="{Binding}"
+								MouseAction="LeftClick" />
+						</Border.InputBindings>
+						<Border.Style>
+							<Style TargetType="{x:Type Border}">
+								<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderBrush}" />
+								<Style.Triggers>
+									<DataTrigger Binding="{Binding Metadata.OnlineSourceVisibility}" Value="Visible">
+										<Setter Property="Cursor" Value="Hand" />
+										<Setter Property="ToolTip" Value="{Binding Metadata.GalleryTooltip}" />
+									</DataTrigger>
+									<MultiDataTrigger>
+										<MultiDataTrigger.Conditions>
+											<Condition Binding="{Binding Metadata.OnlineSourceVisibility}" Value="Visible" />
+											<Condition Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}" Value="True" />
+										</MultiDataTrigger.Conditions>
+										<Setter Property="BorderBrush" Value="{DynamicResource ReduxAccentHoverBrush}" />
+										<Setter Property="Effect">
+											<Setter.Value>
+												<DropShadowEffect BlurRadius="10"
+													Color="#8A6AF1"
+													Opacity="0.65"
+													ShadowDepth="0" />
+											</Setter.Value>
+										</Setter>
+									</MultiDataTrigger>
+								</Style.Triggers>
+							</Style>
+						</Border.Style>
 						<Grid>
 							<Grid.RowDefinitions>
 								<RowDefinition Height="*" />
@@ -213,15 +243,15 @@
 								VerticalAlignment="Stretch"
 								IsHitTestVisible="False"
 								RenderOptions.BitmapScalingMode="HighQuality"
-								Source="{Binding NexusModsData.PictureUrl, Converter={StaticResource UriToBitmapImageConverter}}"
+								Source="{Binding Metadata.PreviewImageUri, Converter={StaticResource UriToBitmapImageConverter}}"
 								Stretch="Uniform"
-								Visibility="{Binding NexusImageVisibility}" />
+								Visibility="{Binding Metadata.PreviewImageVisibility}" />
 							<Grid x:Name="ModDetailsLocalPreviewPlaceholder">
 								<Grid.Style>
 									<Style TargetType="{x:Type Grid}">
 										<Setter Property="Visibility" Value="Visible" />
 										<Style.Triggers>
-											<DataTrigger Binding="{Binding NexusImageVisibility}" Value="Visible">
+											<DataTrigger Binding="{Binding Metadata.PreviewImageVisibility}" Value="Visible">
 												<Setter Property="Visibility" Value="Collapsed" />
 											</DataTrigger>
 										</Style.Triggers>
@@ -264,23 +294,76 @@
 								BorderBrush="{DynamicResource ReduxBorderBrush}"
 								BorderThickness="1"
 								CornerRadius="5">
-								<TextBlock HorizontalAlignment="Center"
+								<StackPanel HorizontalAlignment="Center"
 									VerticalAlignment="Center"
-									FontSize="10"
-									FontWeight="SemiBold">
+									Orientation="Horizontal">
+									<Grid Width="14"
+										Height="14"
+										Margin="0,0,5,0"
+										VerticalAlignment="Center">
+										<Grid.Style>
+											<Style TargetType="{x:Type Grid}">
+												<Setter Property="Visibility" Value="Collapsed" />
+												<Style.Triggers>
+													<DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.MODIO}">
+														<Setter Property="Visibility" Value="Visible" />
+													</DataTrigger>
+												</Style.Triggers>
+											</Style>
+										</Grid.Style>
+										<Path Margin="1"
+											Data="M 4,0 L 10,0 14,4 14,10 10,14 4,14 0,10 0,4 Z"
+											Fill="Transparent"
+											Stroke="{DynamicResource ReduxCyanBrush}"
+											StrokeLineJoin="Round"
+											StrokeThickness="1.6"
+											Stretch="Uniform" />
+										<Ellipse Width="3.5" Height="3.5" Fill="{DynamicResource ReduxCyanBrush}" />
+									</Grid>
+									<Grid Width="14"
+										Height="14"
+										Margin="0,0,5,0"
+										VerticalAlignment="Center">
+										<Grid.Style>
+											<Style TargetType="{x:Type Grid}">
+												<Setter Property="Visibility" Value="Collapsed" />
+												<Style.Triggers>
+													<DataTrigger Binding="{Binding Metadata.SourceType}" Value="{x:Static dapp:ModSourceType.NEXUSMODS}">
+														<Setter Property="Visibility" Value="Visible" />
+													</DataTrigger>
+												</Style.Triggers>
+											</Style>
+										</Grid.Style>
+										<Path Margin="1"
+											Data="M 7,0 L 14,7 7,14 0,7 Z"
+											Fill="Transparent"
+											Stroke="{DynamicResource ReduxWarningBrush}"
+											StrokeLineJoin="Round"
+											StrokeThickness="1.6"
+											Stretch="Uniform" />
+										<Path Width="5.5"
+											Height="5.5"
+											Data="M 2.75,0 L 5.5,2.75 2.75,5.5 0,2.75 Z"
+											Fill="{DynamicResource ReduxWarningBrush}"
+											Stretch="Uniform" />
+									</Grid>
+									<TextBlock VerticalAlignment="Center"
+										FontSize="10"
+										FontWeight="SemiBold">
 									<TextBlock.Style>
 										<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
 											<Setter Property="Foreground" Value="{DynamicResource ReduxTextSecondaryBrush}" />
 											<Setter Property="Text" Value="LOCAL METADATA" />
 											<Style.Triggers>
-												<DataTrigger Binding="{Binding OpenNexusModsLinkVisibility}" Value="Visible">
-													<Setter Property="Foreground" Value="{DynamicResource ReduxAccentHoverBrush}" />
-													<Setter Property="Text" Value="NEXUS MODS" />
+										<DataTrigger Binding="{Binding Metadata.OnlineSourceVisibility}" Value="Visible">
+											<Setter Property="Foreground" Value="{DynamicResource ReduxAccentHoverBrush}" />
+											<Setter Property="Text" Value="{Binding Metadata.SourceBadgeLabel}" />
 												</DataTrigger>
 											</Style.Triggers>
 										</Style>
 									</TextBlock.Style>
-								</TextBlock>
+									</TextBlock>
+								</StackPanel>
 							</Border>
 						</Grid>
 					</Border>
@@ -294,80 +377,30 @@
 						<TextBlock FontSize="20"
 							FontWeight="Bold"
 							Foreground="{DynamicResource ReduxTextPrimaryBrush}"
-							TextTrimming="CharacterEllipsis">
-							<TextBlock.Style>
-								<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-									<Setter Property="Text" Value="{Binding DisplayName}" />
-									<Style.Triggers>
-										<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-											<Setter Property="Text" Value="{Binding NexusModsData.Name}" />
-										</DataTrigger>
-									</Style.Triggers>
-								</Style>
-							</TextBlock.Style>
-						</TextBlock>
+							Text="{Binding Metadata.Title}"
+							TextTrimming="CharacterEllipsis" />
 						<TextBlock Grid.Row="1"
 							Margin="0,2,0,0"
-							Foreground="{DynamicResource ReduxTextMutedBrush}">
-							<TextBlock.Style>
-								<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-									<Setter Property="Text" Value="Selected mod details" />
-									<Style.Triggers>
-										<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-											<Setter Property="Text" Value="Automatically linked from Nexus Mods" />
-										</DataTrigger>
-									</Style.Triggers>
-								</Style>
-							</TextBlock.Style>
-						</TextBlock>
+							Foreground="{DynamicResource ReduxTextMutedBrush}"
+							Text="{Binding Metadata.LinkStatus}" />
 						<WrapPanel Grid.Row="2" Margin="0,7,0,0">
 							<Border Style="{StaticResource ModDetailsMetadataChipStyle}">
-								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}">
-									<TextBlock.Style>
-										<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-											<Setter Property="Text" Value="{Binding DisplayVersion, StringFormat='Version {0}'}" />
-											<Style.Triggers>
-												<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-													<Setter Property="Text" Value="{Binding NexusModsData.Version, StringFormat='Nexus version {0}'}" />
-												</DataTrigger>
-											</Style.Triggers>
-										</Style>
-									</TextBlock.Style>
-								</TextBlock>
+								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+									Text="{Binding Metadata.VersionLabel}" />
 							</Border>
 							<Border Style="{StaticResource ModDetailsMetadataChipStyle}">
-								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}">
-									<TextBlock.Style>
-										<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-											<Setter Property="Text" Value="{Binding Author, StringFormat='By {0}'}" />
-											<Style.Triggers>
-												<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-													<Setter Property="Text" Value="{Binding NexusModsData.Author, StringFormat='By {0}'}" />
-												</DataTrigger>
-											</Style.Triggers>
-										</Style>
-									</TextBlock.Style>
-								</TextBlock>
+								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+									Text="{Binding Metadata.AuthorLabel}" />
 							</Border>
 							<Border Style="{StaticResource ModDetailsMetadataChipStyle}">
-								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}">
-									<TextBlock.Style>
-										<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-											<Setter Property="Text" Value="{Binding LastModifiedDateText}" />
-											<Style.Triggers>
-												<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-													<Setter Property="Text" Value="{Binding NexusModsUpdatedDate, StringFormat='Nexus updated {0:d}'}" />
-												</DataTrigger>
-											</Style.Triggers>
-										</Style>
-									</TextBlock.Style>
-								</TextBlock>
+								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+									Text="{Binding Metadata.UpdatedLabel}" />
 							</Border>
-							<Button Command="{Binding Path=OpenNexusModsPageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
+							<Button Command="{Binding Path=OpenModSourcePageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
 								CommandParameter="{Binding}"
-								Content="View Mod on Nexus Mods"
+								Content="{Binding Metadata.SourcePageButtonLabel}"
 								Style="{StaticResource ModDetailsSourceButtonStyle}"
-								Visibility="{Binding OpenNexusModsLinkVisibility}" />
+								Visibility="{Binding Metadata.OnlineSourceVisibility}" />
 						</WrapPanel>
 						<Border Grid.Row="3"
 							Margin="0,3,0,0"
@@ -389,18 +422,9 @@
 									Margin="0,4,0,0"
 									HorizontalScrollBarVisibility="Disabled"
 									VerticalScrollBarVisibility="Auto">
-									<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}" TextWrapping="Wrap">
-										<TextBlock.Style>
-											<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-												<Setter Property="Text" Value="{Binding Description, TargetNullValue='No local description is available.'}" />
-												<Style.Triggers>
-													<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-														<Setter Property="Text" Value="{Binding NexusModsData.Summary, TargetNullValue='No Nexus Mods summary is available.'}" />
-													</DataTrigger>
-												</Style.Triggers>
-											</Style>
-										</TextBlock.Style>
-									</TextBlock>
+									<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+										Text="{Binding Metadata.Summary, TargetNullValue='No local description is available.'}"
+										TextWrapping="Wrap" />
 								</ScrollViewer>
 							</Grid>
 						</Border>
@@ -415,28 +439,9 @@
 						<RowDefinition Height="*" />
 					</Grid.RowDefinitions>
 					<Grid>
-						<Grid.ColumnDefinitions>
-							<ColumnDefinition Width="*" />
-							<ColumnDefinition Width="Auto" />
-						</Grid.ColumnDefinitions>
-						<TextBlock FontSize="16" FontWeight="SemiBold">
-							<TextBlock.Style>
-								<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-									<Setter Property="Text" Value="Local description" />
-									<Style.Triggers>
-										<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-											<Setter Property="Text" Value="Description from Nexus Mods" />
-										</DataTrigger>
-									</Style.Triggers>
-								</Style>
-							</TextBlock.Style>
-						</TextBlock>
-						<Button Grid.Column="1"
-							Command="{Binding Path=OpenNexusModsPageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
-							CommandParameter="{Binding}"
-							Content="Open original page"
-							Style="{StaticResource ModDetailsSourceButtonStyle}"
-							Visibility="{Binding OpenNexusModsLinkVisibility}" />
+						<TextBlock FontSize="16"
+							FontWeight="SemiBold"
+							Text="{Binding Metadata.DescriptionHeading}" />
 					</Grid>
 					<TextBlock Grid.Row="1"
 						Margin="0,2,0,0"
@@ -446,7 +451,7 @@
 								<Setter Property="Text" Value="Description stored inside the installed mod package." />
 								<Style.Triggers>
 									<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-										<Setter Property="Text" Value="Readable plain-text view. Open the original page for the author's full formatting and links." />
+									<Setter Property="Text" Value="Readable plain-text view of the author's description." />
 									</DataTrigger>
 								</Style.Triggers>
 							</Style>
@@ -460,18 +465,9 @@
 						BorderThickness="1"
 						CornerRadius="7">
 						<ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-							<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}" TextWrapping="Wrap">
-								<TextBlock.Style>
-									<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-										<Setter Property="Text" Value="{Binding Description, TargetNullValue='No local description is available for this mod.'}" />
-										<Style.Triggers>
-											<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-												<Setter Property="Text" Value="{Binding NexusModsData.Description, Converter={StaticResource NexusDescriptionToPlainTextConverter}}" />
-											</DataTrigger>
-										</Style.Triggers>
-									</Style>
-								</TextBlock.Style>
-							</TextBlock>
+							<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+								Text="{Binding Metadata.Description, Converter={StaticResource NexusDescriptionToPlainTextConverter}, TargetNullValue='No local description is available for this mod.'}"
+								TextWrapping="Wrap" />
 						</ScrollViewer>
 					</Border>
 				</Grid>
@@ -519,28 +515,28 @@
 								<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
 									<Setter Property="Text" Value="No linked media yet" />
 									<Style.Triggers>
-										<DataTrigger Binding="{Binding NexusImageVisibility}" Value="Visible">
-											<Setter Property="Text" Value="Media from Nexus Mods" />
+										<DataTrigger Binding="{Binding Metadata.PreviewImageVisibility}" Value="Visible">
+											<Setter Property="Text" Value="{Binding Metadata.SourceLabel, StringFormat='Media from {0}'}" />
 										</DataTrigger>
 									</Style.Triggers>
 								</Style>
 							</TextBlock.Style>
 						</TextBlock>
 						<Button Grid.Column="1"
-							Command="{Binding Path=OpenNexusModsPageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
+							Command="{Binding Path=OpenModSourcePageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
 							CommandParameter="{Binding}"
-							Content="View Mod on Nexus Mods"
+							Content="{Binding Metadata.SourcePageButtonLabel}"
 							Style="{StaticResource ModDetailsSourceButtonStyle}"
-							Visibility="{Binding OpenNexusModsLinkVisibility}" />
+							Visibility="{Binding Metadata.OnlineSourceVisibility}" />
 					</Grid>
 					<TextBlock Grid.Row="1"
 						Margin="0,2,0,0"
 						Foreground="{DynamicResource ReduxTextMutedBrush}">
 						<TextBlock.Style>
 							<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-								<Setter Property="Text" Value="Images from Nexus Mods or mod.io will appear here after an online source is linked." />
+								<Setter Property="Text" Value="Images from the linked mod source will appear here when its gallery is available." />
 								<Style.Triggers>
-									<DataTrigger Binding="{Binding NexusImageVisibility}" Value="Visible">
+									<DataTrigger Binding="{Binding Metadata.PreviewImageVisibility}" Value="Visible">
 										<Setter Property="Text" Value="The linked source image is shown without cropping." />
 									</DataTrigger>
 								</Style.Triggers>
@@ -560,15 +556,15 @@
 								VerticalAlignment="Stretch"
 								IsHitTestVisible="False"
 								RenderOptions.BitmapScalingMode="HighQuality"
-								Source="{Binding NexusModsData.PictureUrl, Converter={StaticResource UriToBitmapImageConverter}}"
+								Source="{Binding Metadata.PreviewImageUri, Converter={StaticResource UriToBitmapImageConverter}}"
 								Stretch="Uniform"
-								Visibility="{Binding NexusImageVisibility}" />
+								Visibility="{Binding Metadata.PreviewImageVisibility}" />
 							<StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
 								<StackPanel.Style>
 									<Style TargetType="StackPanel">
 										<Setter Property="Visibility" Value="Visible" />
 										<Style.Triggers>
-											<DataTrigger Binding="{Binding NexusImageVisibility}" Value="Visible">
+											<DataTrigger Binding="{Binding Metadata.PreviewImageVisibility}" Value="Visible">
 												<Setter Property="Visibility" Value="Collapsed" />
 											</DataTrigger>
 										</Style.Triggers>
@@ -653,39 +649,20 @@
 							<ColumnDefinition Width="*" />
 							<ColumnDefinition Width="Auto" />
 						</Grid.ColumnDefinitions>
-						<TextBlock FontSize="16" FontWeight="SemiBold">
-							<TextBlock.Style>
-								<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-									<Setter Property="Text" Value="No online changelog linked" />
-									<Style.Triggers>
-										<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-											<Setter Property="Text" Value="Changelog from Nexus Mods" />
-										</DataTrigger>
-									</Style.Triggers>
-								</Style>
-							</TextBlock.Style>
-						</TextBlock>
+						<TextBlock FontSize="16"
+							FontWeight="SemiBold"
+							Text="{Binding Metadata.ChangelogHeading}" />
 						<Button Grid.Column="1"
-							Command="{Binding Path=OpenNexusModsChangelogPageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
+							Command="{Binding Path=OpenModChangelogPageCommand, Source={x:Static dapp:DivinityApp.Commands}}"
 							CommandParameter="{Binding}"
-							Content="Open Nexus changelog page"
+							Content="{Binding Metadata.ChangelogButtonLabel}"
 							Style="{StaticResource ModDetailsSourceButtonStyle}"
-							Visibility="{Binding OpenNexusModsLinkVisibility}" />
+							Visibility="{Binding Metadata.OnlineSourceVisibility}" />
 					</Grid>
 					<TextBlock Grid.Row="1"
 						Margin="0,2,0,0"
-						Foreground="{DynamicResource ReduxTextMutedBrush}">
-						<TextBlock.Style>
-							<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
-								<Setter Property="Text" Value="Version history will appear here after an online source is linked." />
-								<Style.Triggers>
-									<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-										<Setter Property="Text" Value="Cached version history from the linked Nexus Mods page." />
-									</DataTrigger>
-								</Style.Triggers>
-							</Style>
-						</TextBlock.Style>
-					</TextBlock>
+						Foreground="{DynamicResource ReduxTextMutedBrush}"
+						Text="{Binding Metadata.ChangelogHelperText}" />
 					<Border Grid.Row="2"
 						Margin="0,9,0,0"
 						Padding="12,10"
@@ -699,8 +676,8 @@
 									<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="{x:Type TextBlock}">
 										<Setter Property="Text" Value="No online changelog is linked to this installed mod." />
 										<Style.Triggers>
-											<DataTrigger Binding="{Binding NexusModsInformationVisibility}" Value="Visible">
-												<Setter Property="Text" Value="{Binding NexusModsData.ChangelogText, Converter={StaticResource NexusDescriptionToPlainTextConverter}, ConverterParameter='No Nexus Mods changelog is available for this mod.'}" />
+										<DataTrigger Binding="{Binding Metadata.OnlineSourceVisibility}" Value="Visible">
+											<Setter Property="Text" Value="{Binding Metadata.ChangelogText, Converter={StaticResource NexusDescriptionToPlainTextConverter}, ConverterParameter='No online changelog is available for this mod.'}" />
 											</DataTrigger>
 										</Style.Triggers>
 									</Style>
@@ -716,9 +693,6 @@
 					Style="{StaticResource ModDetailsTabControlStyle}">
 					<TabItem Header="Overview">
 						<ContentControl Content="{Binding}" ContentTemplate="{StaticResource ModDetailsOverviewTemplate}" />
-					</TabItem>
-					<TabItem Header="Media">
-						<ContentControl Content="{Binding}" ContentTemplate="{StaticResource ModDetailsMediaTemplate}" />
 					</TabItem>
 					<TabItem Header="Description">
 						<ContentControl Content="{Binding}" ContentTemplate="{StaticResource ModDetailsDescriptionTemplate}" />

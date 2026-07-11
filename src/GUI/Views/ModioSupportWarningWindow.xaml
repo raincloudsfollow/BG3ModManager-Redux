@@ -1,0 +1,95 @@
+<adonisUI:AdonisWindow x:Class="DivinityModManager.Views.ModioSupportWarningWindow"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:adonisUI="clr-namespace:AdonisUI.Controls;assembly=AdonisUI"
+	Title="Limited mod.io Support"
+	Width="650"
+	Height="360"
+	MinWidth="650"
+	MinHeight="360"
+	MaxWidth="650"
+	MaxHeight="360"
+	FontFamily="{DynamicResource ReduxFontFamily}"
+	FontWeight="Medium"
+	TextOptions.TextFormattingMode="Display"
+	TextOptions.TextRenderingMode="ClearType"
+	ResizeMode="NoResize"
+	ShowInTaskbar="False"
+	TitleBarBackground="{DynamicResource ReduxSurfaceElevatedBrush}"
+	TitleBarForeground="{DynamicResource ReduxTextPrimaryBrush}"
+	WindowStartupLocation="CenterOwner">
+	<Window.Resources>
+		<ResourceDictionary>
+			<ResourceDictionary.MergedDictionaries>
+				<ResourceDictionary Source="../Themes/MainResourceDictionary.xaml" />
+			</ResourceDictionary.MergedDictionaries>
+		</ResourceDictionary>
+	</Window.Resources>
+	<Border Padding="22"
+		Background="{DynamicResource ReduxAppBackgroundBrush}"
+		BorderBrush="{DynamicResource ReduxBorderBrush}"
+		BorderThickness="1">
+		<Grid>
+			<Grid.RowDefinitions>
+				<RowDefinition Height="Auto" />
+				<RowDefinition Height="*" />
+				<RowDefinition Height="Auto" />
+			</Grid.RowDefinitions>
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="Auto" />
+					<ColumnDefinition Width="*" />
+				</Grid.ColumnDefinitions>
+				<TextBlock Margin="0,0,14,0"
+					VerticalAlignment="Top"
+					FontFamily="Segoe UI Symbol"
+					FontSize="34"
+					Foreground="{DynamicResource ReduxWarningBrush}"
+					Text="&#x26A0;" />
+				<StackPanel Grid.Column="1">
+					<TextBlock FontSize="20"
+						FontWeight="SemiBold"
+						Foreground="{DynamicResource ReduxTextPrimaryBrush}"
+						Text="mod.io support is limited" />
+					<TextBlock Margin="0,5,0,0"
+						Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+						Text="Redux detected at least one mod linked to mod.io."
+						TextWrapping="Wrap" />
+				</StackPanel>
+			</Grid>
+			<Border Grid.Row="1"
+				Margin="0,18,0,14"
+				Padding="14,12"
+				Background="{DynamicResource ReduxSurfaceBrush}"
+				BorderBrush="{DynamicResource ReduxWarningBrush}"
+				BorderThickness="1"
+				CornerRadius="8">
+				<StackPanel>
+					<TextBlock Foreground="{DynamicResource ReduxTextPrimaryBrush}"
+						Text="A mod.io subscription can restore or redownload a mod when Baldur's Gate 3 launches—even after Redux deletes the local file. To remove one fully, unsubscribe through mod.io or BG3's in-game Mod Manager as well."
+						TextWrapping="Wrap" />
+					<TextBlock Margin="0,9,0,0"
+						Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+						Text="For predictable file management, manual/local or Nexus Mods installations are recommended when available."
+						TextWrapping="Wrap" />
+					<CheckBox x:Name="AcknowledgementCheckBox"
+						Margin="0,14,0,0"
+						FontWeight="SemiBold"
+						Foreground="{DynamicResource ReduxTextPrimaryBrush}"
+						Content="I understand that subscribed mod.io mods may be redownloaded by the game." />
+				</StackPanel>
+			</Border>
+			<Button Grid.Row="2"
+				Width="116"
+				Height="34"
+				HorizontalAlignment="Right"
+				Background="{DynamicResource ReduxAccentBrush}"
+				BorderBrush="{DynamicResource ReduxAccentHoverBrush}"
+				Click="ContinueButton_Click"
+				Content="Continue"
+				Foreground="White"
+				IsDefault="True"
+				IsEnabled="{Binding IsChecked, ElementName=AcknowledgementCheckBox}" />
+		</Grid>
+	</Border>
+</adonisUI:AdonisWindow>

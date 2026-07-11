@@ -10,6 +10,8 @@ public class ModUpdateHandler : ReactiveObject
 {
 	private readonly NexusModsCacheHandler _nexus;
 	public NexusModsCacheHandler Nexus => _nexus;
+	private readonly ModioCacheHandler _modio;
+	public ModioCacheHandler Modio => _modio;
 
 	private readonly SteamWorkshopCacheHandler _workshop;
 	public SteamWorkshopCacheHandler Workshop => _workshop;
@@ -35,6 +37,10 @@ public class ModUpdateHandler : ReactiveObject
 		if (Nexus.IsEnabled)
 		{
 			await Nexus.Update(mods, cts);
+		}
+		if (Modio.IsEnabled)
+		{
+			await Modio.Update(mods, cts);
 		}
 		if (Github.IsEnabled)
 		{
@@ -71,6 +77,14 @@ public class ModUpdateHandler : ReactiveObject
 				}
 			}
 		}
+		if (Modio.IsEnabled)
+		{
+			var data = await Modio.LoadCacheAsync(currentAppVersion, cts);
+			if (data != null)
+			{
+				Modio.CacheData = data;
+			}
+		}
 		if (Github.IsEnabled)
 		{
 			await Github.LoadCacheAsync(currentAppVersion, cts);
@@ -105,6 +119,10 @@ public class ModUpdateHandler : ReactiveObject
 						mod.NexusModsData.Update(nexusData);
 					}
 				}
+				if (Modio.IsEnabled && Modio.CacheData.Mods.TryGetValue(mod.UUID, out var modioData))
+				{
+					mod.ModioData.Update(modioData);
+				}
 				if (Github.IsEnabled)
 				{
 					if (Github.CacheData.Mods.TryGetValue(mod.UUID, out var githubData))
@@ -133,6 +151,14 @@ public class ModUpdateHandler : ReactiveObject
 			}
 			await Nexus.SaveCacheAsync(true, currentAppVersion, cts);
 		}
+		if (Modio.IsEnabled)
+		{
+			foreach (var mod in mods.Where(mod => mod.ModioData.HasMetadata))
+			{
+				Modio.CacheData.Mods[mod.UUID] = mod.ModioData;
+			}
+			await Modio.SaveCacheAsync(true, currentAppVersion, cts);
+		}
 		if (Github.IsEnabled)
 		{
 			await Github.SaveCacheAsync(true, currentAppVersion, cts);
@@ -142,12 +168,13 @@ public class ModUpdateHandler : ReactiveObject
 
 	public bool DeleteCache()
 	{
-		return Nexus.DeleteCache() || Workshop.DeleteCache() || Github.DeleteCache();
+		return Nexus.DeleteCache() || Modio.DeleteCache() || Workshop.DeleteCache() || Github.DeleteCache();
 	}
 
 	public ModUpdateHandler()
 	{
 		_nexus = new NexusModsCacheHandler();
+		_modio = new ModioCacheHandler();
 		_workshop = new SteamWorkshopCacheHandler();
 		_github = new GithubModsCacheHandler();
 	}

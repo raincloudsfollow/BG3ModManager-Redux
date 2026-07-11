@@ -32,6 +32,20 @@ public class DivinityModManagerSettings : ReactiveObject
 	[SettingsEntry("Nexus Mods API Key", "Personal API key used to retrieve Nexus Mods metadata and updates. This testing build stores the key locally in Data/settings.json. You can revoke the key from your Nexus Mods account at any time.")]
 	[DataMember, Reactive] public string NexusModsAPIKey { get; set; }
 
+	[DefaultValue("")]
+	[SettingsEntry("mod.io API Key", "Read-only API key used to retrieve metadata for mods installed through BG3's in-game Mod Manager. The key is stored locally in Data/settings.json.")]
+	[DataMember, Reactive] public string ModioAPIKey { get; set; }
+
+	[DefaultValue(false)]
+	[DataMember, Reactive] public bool ModioSupportWarningAcknowledged { get; set; }
+
+	[DefaultValue(false)]
+	[SettingsEntry("Hide mod.io source warning icons", "Hide the amber warning icon beside mod.io sources. Subscribed mod.io mods may still be restored or redownloaded by BG3 after local deletion.")]
+	[DataMember, Reactive] public bool HideModioSourceWarningIcons { get; set; }
+
+	[SettingsEntry("Reset mod.io warning acknowledgement", "Clear the saved acknowledgement so the mandatory mod.io safety warning appears again on the next metadata refresh or application launch.")]
+	[Reactive] public bool ResetModioSupportWarningAcknowledgement { get; set; }
+
 	[DefaultValue(false)]
 	[SettingsEntry("Story Log", "When launching the game, enable the Osiris story log (osiris.log)")]
 	[DataMember, Reactive] public bool GameStoryLogEnabled { get; set; }
@@ -232,6 +246,15 @@ public class DivinityModManagerSettings : ReactiveObject
 		});
 
 		this.WhenAnyValue(x => x.DebugModeEnabled).Subscribe(b => DivinityApp.DeveloperModeEnabled = b);
+
+		this.WhenAnyValue(x => x.ResetModioSupportWarningAcknowledgement)
+			.Where(reset => reset)
+			.Subscribe(_ =>
+			{
+				ModioSupportWarningAcknowledged = false;
+				ResetModioSupportWarningAcknowledgement = false;
+				CanSaveSettings = true;
+			});
 
 		this.WhenAnyValue(x => x.DefaultExtenderLogDirectory, x => x.ExtenderSettings.LogDirectory)
 		.Select(x => GetExtenderLogsDirectory(x.Item1, x.Item2))

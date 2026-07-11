@@ -1,6 +1,8 @@
 
 
 using DivinityModManager.Models.Github;
+using DivinityModManager.Models.Metadata;
+using DivinityModManager.Models.Modio;
 using DivinityModManager.Models.NexusMods;
 using DivinityModManager.Util;
 
@@ -237,7 +239,9 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 
 	[Reactive] public DivinityModWorkshopData WorkshopData { get; set; }
 	[Reactive] public NexusModsModData NexusModsData { get; set; }
+	[Reactive] public ModioModData ModioData { get; set; }
 	[Reactive] public GithubModData GithubData { get; set; }
+	public ModMetadataViewData Metadata { get; }
 
 	public string GetURL(ModSourceType modSourceType, bool asProtocol = false)
 	{
@@ -392,6 +396,8 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 
 		WorkshopData = new DivinityModWorkshopData();
 		NexusModsData = new NexusModsModData();
+		ModioData = new ModioModData();
+		Metadata = new ModMetadataViewData(this);
 		//GithubData = new GithubModData();
 
 		this.WhenAnyValue(x => x.UUID).BindTo(NexusModsData, x => x.UUID);
@@ -433,10 +439,8 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 			.Select(b => b ? Visibility.Visible : Visibility.Collapsed)
 			.ToUIProperty(this, x => x.OpenNexusModsLinkVisibility, Visibility.Collapsed);
 
-		// This is presentation metadata only. mod.io will join this resolver when
-		// its provider is added; it does not affect the installed mod or load order.
-		this.WhenAnyValue(x => x.CanOpenNexusModsLink)
-			.Select(isNexusLinked => isNexusLinked ? "Nexus Mods" : "Local")
+		// Presentation-only provider label used by the mod list.
+		this.WhenAnyValue(x => x.Metadata.SourceLabel)
 			.ToUIProperty(this, x => x.DisplaySource, "Local");
 
 		var depConn = Dependencies.Connect().ObserveOn(RxApp.MainThreadScheduler);

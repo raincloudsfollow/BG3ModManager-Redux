@@ -10,6 +10,8 @@ public enum ModSourceType
 	STEAM,
 	[Description("Nexus Mods")]
 	NEXUSMODS,
+	[Description("mod.io")]
+	MODIO,
 	[Description("Github")]
 	GITHUB
 }

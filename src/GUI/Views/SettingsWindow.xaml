@@ -23,6 +23,10 @@
     Title="Preferences"
     Width="800"
     Height="900"
+	FontFamily="{DynamicResource ReduxFontFamily}"
+	FontWeight="Medium"
+	TextOptions.TextFormattingMode="Display"
+	TextOptions.TextRenderingMode="ClearType"
     TitleBarBackground="{DynamicResource ReduxSurfaceElevatedBrush}"
     TitleBarForeground="{DynamicResource ReduxTextPrimaryBrush}"
     mc:Ignorable="d">

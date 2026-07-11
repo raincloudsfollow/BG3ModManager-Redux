@@ -261,6 +261,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 
 	private void UpdateModDetailsSelection(SelectionChangedEventArgs e)
 	{
+		var detailsWereVisible = ModDetailsPanel.Visibility == Visibility.Visible;
 		var selectedMod = e?.AddedItems?.OfType<DivinityModData>().LastOrDefault()
 			?? GetSelectedModForDetails();
 
@@ -271,7 +272,14 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 
 		ModDetailsContent.Content = selectedMod;
 		ModDetailsPanel.Visibility = selectedMod != null ? Visibility.Visible : Visibility.Collapsed;
-		UpdateModDetailsLayout(selectedMod != null);
+
+		// Changing the selected mod should replace the drawer content without
+		// rebuilding its row. Reapplying the row here could turn a user-sized
+		// drawer into the full available height after the main window was resized.
+		if (detailsWereVisible != (selectedMod != null))
+		{
+			UpdateModDetailsLayout(selectedMod != null);
+		}
 	}
 
 	private void RememberExpandedModDetailsHeight()

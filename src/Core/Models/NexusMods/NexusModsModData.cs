@@ -1,6 +1,8 @@
 ﻿using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 
+using DivinityModManager.Models.Metadata;
+
 using NexusModsNET.DataModels;
 
 using System.ComponentModel;
@@ -9,8 +11,37 @@ using System.Text;
 
 namespace DivinityModManager.Models.NexusMods;
 
-public class NexusModsModData : INotifyPropertyChanged
+public class NexusModsModData : INotifyPropertyChanged, IExternalModMetadata
 {
+	[JsonIgnore]
+	public ModSourceType SourceType => ModSourceType.NEXUSMODS;
+
+	[JsonIgnore]
+	public bool HasMetadata => IsUpdated;
+
+	[JsonIgnore]
+	public DateTime? UpdatedAt => UpdatedTimestamp > 0
+		? DateTimeOffset.FromUnixTimeSeconds(UpdatedTimestamp).LocalDateTime
+		: null;
+
+	[JsonIgnore]
+	public string SourcePageUrl => ModId >= DivinityApp.NEXUSMODS_MOD_ID_START
+		? String.Format(DivinityApp.NEXUSMODS_MOD_URL, ModId)
+		: String.Empty;
+
+	[JsonIgnore]
+	public string GalleryPageUrl => !String.IsNullOrWhiteSpace(SourcePageUrl)
+		? $"{SourcePageUrl}?tab=images"
+		: String.Empty;
+
+	[JsonIgnore]
+	public string ChangelogPageUrl => !String.IsNullOrWhiteSpace(SourcePageUrl)
+		? $"{SourcePageUrl}?tab=logs"
+		: String.Empty;
+
+	[JsonIgnore]
+	public string PreviewImageUrl => PictureUrl?.AbsoluteUri ?? String.Empty;
+
 	[JsonProperty("uuid")]
 	public string UUID { get; set; }
 

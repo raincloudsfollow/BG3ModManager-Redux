@@ -9,6 +9,7 @@ public class DivinityProfileActiveModData
 	public string Name { get; set; }
 	public string UUID { get; set; }
 	public ulong Version { get; set; }
+	public ulong PublishHandle { get; set; }
 
 	private static readonly NodeSerializationSettings _serializationSettings = new()
 	{
@@ -55,6 +56,7 @@ public class DivinityProfileActiveModData
 		Name = GetAttributeAsString(attributes, "Name", "");
 		UUID = GetAttributeAsString(attributes, "UUID", "");
 		Version = GetULongAttribute(attributes, "Version", 0UL);
+		PublishHandle = GetULongAttribute(attributes, "PublishHandle", 0UL);
 
 		//DivinityApp.LogMessage($"[DivinityProfileActiveModData] Name({Name}) UUID({UUID})");
 	}

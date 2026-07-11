@@ -28,7 +28,10 @@ public class DivinityGlobalCommands : ReactiveObject
 	public ReactiveCommand<DivinityModData, Unit> DeleteModCommand { get; private set; }
 	public ReactiveCommand<DivinityModData, Unit> MoveModToActiveCommand { get; private set; }
 	public ReactiveCommand<DivinityModData, Unit> MoveModToInactiveCommand { get; private set; }
+	public ReactiveCommand<DivinityModData, Unit> OpenModSourcePageCommand { get; private set; }
 	public ReactiveCommand<DivinityModData, Unit> OpenNexusModsPageCommand { get; private set; }
+	public ReactiveCommand<DivinityModData, Unit> OpenModGalleryPageCommand { get; private set; }
+	public ReactiveCommand<DivinityModData, Unit> OpenModChangelogPageCommand { get; private set; }
 	public ReactiveCommand<DivinityModData, Unit> OpenNexusModsChangelogPageCommand { get; private set; }
 	public ReactiveCommand<string, Unit> OpenURLCommand { get; private set; }
 	public ReactiveCommand<DivinityModData, Unit> ToggleForceAllowInLoadOrderCommand { get; private set; }
@@ -102,6 +105,11 @@ public class DivinityGlobalCommands : ReactiveObject
 		}
 	}
 
+	public void OpenModSourcePage(DivinityModData mod)
+	{
+		OpenURL(mod.Metadata.SourcePageUrl);
+	}
+
 	public void OpenNexusModsChangelogPage(DivinityModData mod)
 	{
 		var url = mod.GetURL(ModSourceType.NEXUSMODS);
@@ -109,6 +117,16 @@ public class DivinityGlobalCommands : ReactiveObject
 		{
 			ProcessHelper.TryOpenUrl($"{url}?tab=logs");
 		}
+	}
+
+	public void OpenModChangelogPage(DivinityModData mod)
+	{
+		OpenURL(mod.Metadata.ChangelogPageUrl);
+	}
+
+	public void OpenModGalleryPage(DivinityModData mod)
+	{
+		OpenURL(mod.Metadata.GalleryPageUrl);
 	}
 
 	public void OpenRepositoryPage(DivinityModData mod)
@@ -216,7 +234,10 @@ public class DivinityGlobalCommands : ReactiveObject
 			mod => MoveModsBetweenLists(mod, false), canExecuteViewModelCommands);
 
 		OpenURLCommand = ReactiveCommand.Create<string>(OpenURL, canExecuteViewModelCommands);
+		OpenModSourcePageCommand = ReactiveCommand.Create<DivinityModData>(OpenModSourcePage, canExecuteViewModelCommands);
 		OpenNexusModsPageCommand = ReactiveCommand.Create<DivinityModData>(OpenNexusModsPage, canExecuteViewModelCommands);
+		OpenModGalleryPageCommand = ReactiveCommand.Create<DivinityModData>(OpenModGalleryPage, canExecuteViewModelCommands);
+		OpenModChangelogPageCommand = ReactiveCommand.Create<DivinityModData>(OpenModChangelogPage, canExecuteViewModelCommands);
 		OpenNexusModsChangelogPageCommand = ReactiveCommand.Create<DivinityModData>(OpenNexusModsChangelogPage, canExecuteViewModelCommands);
 		ToggleForceAllowInLoadOrderCommand = ReactiveCommand.Create<DivinityModData>(ToggleForceAllowInLoadOrder, canExecuteViewModelCommands);
 	}
