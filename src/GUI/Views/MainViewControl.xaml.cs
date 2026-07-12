@@ -29,8 +29,10 @@ public partial class MainViewControl : MainViewControlViewBase
 	private readonly Dictionary<string, MenuItem> menuItems = new();
 	public Dictionary<string, MenuItem> MenuItems => menuItems;
 
-	public static readonly SolidColorBrush MessageBoxDefaultBackgroundBrush = new(Color.FromRgb(78, 56, 201));
-	public static readonly SolidColorBrush MessageBoxErrorBackgroundBrush = new(Color.FromRgb(219, 40, 40));
+	public static Brush MessageBoxDefaultBackgroundBrush =>
+		Application.Current?.TryFindResource("ReduxSurfaceElevatedBrush") as Brush ?? System.Windows.Media.Brushes.DimGray;
+	public static Brush MessageBoxErrorBackgroundBrush =>
+		Application.Current?.TryFindResource("ReduxErrorBrush") as Brush ?? System.Windows.Media.Brushes.Firebrick;
 
 	private void QuickLinksButton_Click(object sender, RoutedEventArgs e)
 	{

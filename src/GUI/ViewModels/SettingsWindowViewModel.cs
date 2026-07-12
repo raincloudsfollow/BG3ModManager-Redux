@@ -163,7 +163,10 @@ public class SettingsWindowViewModel : ReactiveObject
 			if (gameCurrentVersion < gameMinVersion && _lastWarnedVersion != gameCurrentVersion)
 			{
 				_lastWarnedVersion = gameCurrentVersion;
-				MessageBox.Show($"Script Extender {version.Version} ({channel}) requires at minimum game version {version.MinGameVersion}. The current game version is {gameCurrentVersion}.", "Old Game Detected", MessageBoxButton.OK, MessageBoxImage.Error);
+				Xceed.Wpf.Toolkit.MessageBox.Show(View,
+					$"Script Extender {version.Version} ({channel}) requires at minimum game version {version.MinGameVersion}. The current game version is {gameCurrentVersion}.",
+					"Old Game Detected", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.OK,
+					Main.View.MainWindowMessageBox_OK.Style);
 			}
 		}
 	}

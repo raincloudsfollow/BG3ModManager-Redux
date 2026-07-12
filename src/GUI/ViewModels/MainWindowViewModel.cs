@@ -6,6 +6,7 @@ using DivinityModManager.Extensions;
 using DivinityModManager.Models;
 using DivinityModManager.Models.App;
 using DivinityModManager.Models.Extender;
+using DivinityModManager.Models.Health;
 using DivinityModManager.Models.NexusMods;
 using DivinityModManager.ModUpdater;
 using DivinityModManager.ModUpdater.Cache;
@@ -163,6 +164,12 @@ public class MainWindowViewModel : BaseHistoryViewModel, IActivatableViewModel, 
 
 	private readonly ObservableCollectionExtended<DivinityModData> _inactiveMods = new();
 	public ObservableCollectionExtended<DivinityModData> InactiveMods => _inactiveMods;
+	private readonly ModHealthAnalyzer _modHealthAnalyzer = new();
+	private readonly ObservableCollectionExtended<ModHealthSnapshot> _modHealthSnapshotItems = new();
+	private IReadOnlyList<DivinityModData> _lastDetectedDuplicateMods = Array.Empty<DivinityModData>();
+	private IDisposable _modHealthRefreshTask;
+	private string _lastModHealthDiagnosticSignature = String.Empty;
+	public ReadOnlyObservableCollection<ModHealthSnapshot> ModHealthSnapshots { get; }
 	public ObservableCollectionExtended<DivinityModData> DisplayActiveMods { get; } = new();
 	public ObservableCollectionExtended<DivinityModData> DisplayInactiveMods { get; } = new();
 	private bool _updatingVisualModLists;
@@ -201,9 +208,11 @@ public class MainWindowViewModel : BaseHistoryViewModel, IActivatableViewModel, 
 
 	public const string AllModsCategory = "All Mods";
 	public const string UncategorizedModsCategory = "Uncategorized";
+	public const string NoCategoryAssignment = "__ReduxNoCategory__";
 	public ObservableCollectionExtended<ModCategoryFilterItem> ModCategoryFilters { get; } = new();
 	[Reactive] public string SelectedModCategory { get; set; } = AllModsCategory;
 	[Reactive] public bool IsCategoriesExpanded { get; set; } = true;
+	[Reactive] public bool IsAlwaysLoadedExpanded { get; set; } = true;
 
 	private static readonly (string Name, string[] Keywords)[] ReduxCategoryRules =
 	[
@@ -215,14 +224,16 @@ public class MainWindowViewModel : BaseHistoryViewModel, IActivatableViewModel, 
 		("Overhauls", ["overhaul", "total conversion"]),
 		("Companions", ["companion", "astarion", "gale", "karlach", "laezel", "shadowheart", "wyll", "minthara", "halsin", "jaheira", "minsc"]),
 		("Utilities", ["utility", "tool", "mod fixer", "script extender", "achievement enabler", "native camera"]),
-		("Gameplay", ["gameplay", "balance", "combat", "spell", "feat", "weapon", "armor", "equipment", "gold", "weight", "carry", "level", "quest", "race", "origin"])
+		("Gameplay", ["gameplay", "balance", "combat", "spell", "feat", "weapon", "armor", "equipment", "gold", "weight", "carry", "level", "quest", "race", "origin"]),
+		("Overrides", ["override", "always loaded", "file override"])
 	];
 	private static readonly Dictionary<string, string> ReduxCategoryDefaultColors = new(StringComparer.OrdinalIgnoreCase)
 	{
 		[AllModsCategory] = "#8A6AF1", [UncategorizedModsCategory] = "#8F879E",
 		["User Interface"] = "#8A6AF1", ["Classes"] = "#3B82F6", ["Cosmetics"] = "#D45A9E",
 		["Libraries"] = "#3FA37A", ["Patches"] = "#71B96B", ["Overhauls"] = "#D66B55",
-		["Companions"] = "#C9963E", ["Utilities"] = "#22B8C5", ["Gameplay"] = "#D7A24B"
+		["Companions"] = "#C9963E", ["Utilities"] = "#22B8C5", ["Gameplay"] = "#D7A24B",
+		["Overrides"] = "#C65362"
 	};
 	private static readonly string[] ReduxCustomCategoryPalette =
 	[
@@ -1674,6 +1685,7 @@ Directory the zip will be extracted to:
 	public async Task<List<DivinityModData>> LoadModsAsync(double taskStepAmount = 0.1d)
 	{
 		List<DivinityModData> finalMods = [];
+		_lastDetectedDuplicateMods = Array.Empty<DivinityModData>();
 		ModLoadingResults modLoadingResults = null;
 		List<DivinityModData> projects = null;
 		List<DivinityModData> baseMods = null;
@@ -1766,6 +1778,7 @@ Directory the zip will be extracted to:
 				}
 			}
 			var dupeCount = modLoadingResults.Duplicates.Count;
+			_lastDetectedDuplicateMods = modLoadingResults.Duplicates.ToArray();
 			if (dupeCount > 0)
 			{
 				await Observable.Start(() =>
@@ -1961,6 +1974,14 @@ Directory the zip will be extracted to:
 			File.Move(temporaryPath, finalPath);
 
 		mod.FilePath = finalPath;
+		// Metadata-less file overrides derive their identity from the pak path. Validation
+		// happens against a non-pak staging filename, so normalize that transient identity
+		// after the completed package is moved into its real location.
+		if (!mod.HasMetadata && mod.IsForceLoaded)
+		{
+			mod.Name = Path.GetFileNameWithoutExtension(finalPath);
+			mod.UUID = finalPath;
+		}
 		DivinityApp.Log($"Committed validated mod package to '{finalPath}'.");
 		return mod;
 	}
@@ -2465,19 +2486,39 @@ Directory the zip will be extracted to:
 					UpdateHandler.Nexus.CacheData = cachedData;
 					await Observable.Start(() =>
 					{
-						foreach (var mod in loadedUserMods)
+					foreach (var mod in loadedUserMods)
+					{
+						if (cachedData.Mods.TryGetValue(mod.UUID, out var nexusData))
 						{
-							if (cachedData.Mods.TryGetValue(mod.UUID, out var nexusData))
+							mod.NexusModsData.Update(nexusData);
+						}
+						else if (mod.IsForceLoaded && !mod.HasMetadata && !String.IsNullOrWhiteSpace(mod.FilePath))
+						{
+							// Safety-staged imports from earlier Redux builds used the temporary
+							// filename as the UUID/cache key. Migrate that provider association to
+							// the committed pak identity so it survives refreshes.
+							var baseName = Path.GetFileNameWithoutExtension(mod.FilePath);
+							var stagingPrefix = $".{baseName}.redux-import-";
+							var stagedEntry = cachedData.Mods.FirstOrDefault(entry =>
+								Path.GetFileName(entry.Key).StartsWith(stagingPrefix, StringComparison.OrdinalIgnoreCase) &&
+								entry.Key.EndsWith(".pak.tmp", StringComparison.OrdinalIgnoreCase));
+							if (!String.IsNullOrWhiteSpace(stagedEntry.Key))
 							{
-								mod.NexusModsData.Update(nexusData);
+								mod.NexusModsData.Update(stagedEntry.Value);
+								cachedData.Mods.Remove(stagedEntry.Key);
+								cachedData.Mods[mod.UUID] = stagedEntry.Value;
+								cacheChanged = true;
+								DivinityApp.Log($"Migrated Nexus Mods metadata cache from staged override identity '{stagedEntry.Key}' to '{mod.UUID}'.");
 							}
 						}
+					}
 					}, RxApp.MainThreadScheduler);
 				}
 
 				var missingMetadata = loadedUserMods
 					.Where(mod => mod.NexusModsData.ModId >= DivinityApp.NEXUSMODS_MOD_ID_START
 						&& (String.IsNullOrWhiteSpace(mod.NexusModsData.Name)
+							|| String.IsNullOrWhiteSpace(mod.NexusModsData.UploadedBy)
 							|| !mod.NexusModsData.DescriptionLoaded))
 					.ToList();
 
@@ -4666,7 +4707,8 @@ Directory the zip will be extracted to:
 
 		if (SelectedModCategory.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase))
 		{
-			return GetEffectiveModCategories(mod).Contains(UncategorizedModsCategory, StringComparer.OrdinalIgnoreCase);
+			var categories = GetEffectiveModCategories(mod);
+			return categories.Count == 0 || categories.Contains(UncategorizedModsCategory, StringComparer.OrdinalIgnoreCase);
 		}
 
 		return GetEffectiveModCategories(mod).Contains(SelectedModCategory, StringComparer.OrdinalIgnoreCase);
@@ -4674,6 +4716,10 @@ Directory the zip will be extracted to:
 
 	private string GetAutomaticModCategory(DivinityModData mod)
 	{
+		if (mod.IsForceLoaded && !mod.IsForceLoadedMergedMod && !mod.ForceAllowInLoadOrder &&
+			IsModCategoryEnabled("Overrides"))
+			return "Overrides";
+
 		var nameSource = String.Join(" ", new[]
 		{
 			mod.Name,
@@ -4725,6 +4771,8 @@ Directory the zip will be extracted to:
 		if (mod != null && !String.IsNullOrWhiteSpace(mod.UUID) &&
 			Settings.ModCategoryAssignments.TryGetValue(mod.UUID, out var categories) && categories?.Count > 0)
 		{
+			if (categories.Contains(NoCategoryAssignment, StringComparer.OrdinalIgnoreCase))
+				return Array.Empty<string>();
 			var enabledCategories = categories.Where(category => !String.IsNullOrWhiteSpace(category) && IsModCategoryEnabled(category))
 				.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 			if (enabledCategories.Count > 0) return enabledCategories;
@@ -5047,11 +5095,20 @@ Directory the zip will be extracted to:
 		}
 		else
 		{
+			if (category.Equals(NoCategoryAssignment, StringComparison.OrdinalIgnoreCase))
+			{
+				Settings.ModCategoryAssignments[mod.UUID] = new List<string> { NoCategoryAssignment };
+				Settings.ModCategoryOverrides.Remove(mod.UUID);
+				SaveSettings();
+				ScheduleRefreshModCategories();
+				return;
+			}
 			if (!Settings.ModCategoryAssignments.TryGetValue(mod.UUID, out var categories))
 			{
 				categories = new List<string>();
 				Settings.ModCategoryAssignments[mod.UUID] = categories;
 			}
+			categories.RemoveAll(item => item.Equals(NoCategoryAssignment, StringComparison.OrdinalIgnoreCase));
 			var existing = categories.FirstOrDefault(item => item.Equals(category, StringComparison.OrdinalIgnoreCase));
 			if (existing != null) categories.Remove(existing); else categories.Add(category);
 			if (categories.Count == 0) Settings.ModCategoryAssignments.Remove(mod.UUID);
@@ -5071,6 +5128,11 @@ Directory the zip will be extracted to:
 
 		return category == null || assignedCategories.Contains(category, StringComparer.OrdinalIgnoreCase);
 	}
+
+	public bool HasNoCategoryAssignment(DivinityModData mod) => mod != null &&
+		!String.IsNullOrWhiteSpace(mod.UUID) &&
+		Settings.ModCategoryAssignments.TryGetValue(mod.UUID, out var categories) &&
+		categories?.Contains(NoCategoryAssignment, StringComparer.OrdinalIgnoreCase) == true;
 
 	private static bool CategorySourceContains(string source, string keyword)
 	{
@@ -5093,7 +5155,7 @@ Directory the zip will be extracted to:
 
 	private void RefreshModCategories()
 	{
-		var allMods = ActiveMods.Concat(InactiveMods)
+		var allMods = ActiveMods.Concat(InactiveMods).Concat(ForceLoadedMods)
 			.GroupBy(mod => mod.UUID, StringComparer.OrdinalIgnoreCase)
 			.Select(group => group.First())
 			.ToList();
@@ -5168,7 +5230,8 @@ Directory the zip will be extracted to:
 				ModCategoryFilters.Add(new ModCategoryFilterItem(customCategory, count, GetCategoryColor(customCategory), CategoryHasNewMods(customCategory)));
 			}
 		}
-		var uncategorizedCount = allMods.Count(mod => mod.DisplayCategories.Any(item => item.Name.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase)));
+		var uncategorizedCount = allMods.Count(mod => mod.DisplayCategories.Count == 0 ||
+			mod.DisplayCategories.Any(item => item.Name.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase)));
 		if (!Settings.HideEmptyModCategories || uncategorizedCount > 0)
 		{
 			ModCategoryFilters.Add(new ModCategoryFilterItem(UncategorizedModsCategory, uncategorizedCount, GetCategoryColor(UncategorizedModsCategory), CategoryHasNewMods(UncategorizedModsCategory)));
@@ -5811,8 +5874,74 @@ Directory the zip will be extracted to:
 		}
 	}
 
+	private void ScheduleModHealthRefresh()
+	{
+		_modHealthRefreshTask?.Dispose();
+		_modHealthRefreshTask = RxApp.MainThreadScheduler.Schedule(
+			TimeSpan.FromMilliseconds(300),
+			RecomputeModHealthSnapshots);
+	}
+
+	private void RecomputeModHealthSnapshots()
+	{
+		var snapshots = _modHealthAnalyzer.AnalyzeAll(mods.Items, ActiveMods, _lastDetectedDuplicateMods);
+		_modHealthSnapshotItems.Clear();
+		_modHealthSnapshotItems.AddRange(snapshots);
+
+		if (Settings.DebugModeEnabled)
+		{
+			Window?.ToggleLogging(true);
+			var diagnosticSignature = BuildModHealthDiagnosticSignature(snapshots);
+			if (!String.Equals(_lastModHealthDiagnosticSignature, diagnosticSignature, StringComparison.Ordinal))
+			{
+				_lastModHealthDiagnosticSignature = diagnosticSignature;
+				LogModHealthDiagnostics(snapshots);
+			}
+		}
+		else
+		{
+			_lastModHealthDiagnosticSignature = String.Empty;
+		}
+	}
+
+	private static string BuildModHealthDiagnosticSignature(IEnumerable<ModHealthSnapshot> snapshots)
+	{
+		return String.Join("|", snapshots
+			.OrderBy(snapshot => snapshot.Mod.UUID, StringComparer.OrdinalIgnoreCase)
+			.SelectMany(snapshot => snapshot.Findings
+				.OrderBy(finding => finding.Code)
+				.ThenBy(finding => finding.Severity)
+				.Select(finding => $"{snapshot.Mod.UUID}:{finding.Code}:{finding.Severity}:{String.Join(",", finding.RelatedModUuids.OrderBy(uuid => uuid, StringComparer.OrdinalIgnoreCase))}")));
+	}
+
+	private static void LogModHealthDiagnostics(IEnumerable<ModHealthSnapshot> snapshots)
+	{
+		var snapshotList = snapshots.ToArray();
+		var entries = snapshotList
+			.SelectMany(snapshot => snapshot.Findings.Select(finding => (snapshot.Mod, Finding: finding)))
+			.OrderByDescending(entry => entry.Finding.Severity)
+			.ThenBy(entry => entry.Finding.Code)
+			.ThenBy(entry => entry.Mod.DisplayName)
+			.ToArray();
+
+		DivinityApp.Log($"[ModHealth] Diagnostic snapshot: {snapshotList.Length} mod(s), {entries.Length} finding(s). Read-only; no actions were performed.");
+		foreach (var group in entries.GroupBy(entry => (entry.Finding.Severity, entry.Finding.Code)))
+		{
+			DivinityApp.Log($"[ModHealth][{group.Key.Severity}][{group.Key.Code}] {group.Count()} finding(s)");
+			foreach (var entry in group)
+			{
+				var related = entry.Finding.RelatedModUuids.Count > 0
+					? String.Join(", ", entry.Finding.RelatedModUuids)
+					: "none";
+				var message = entry.Finding.Message.Replace(Environment.NewLine, " ");
+				DivinityApp.Log($"[ModHealth] Mod='{entry.Mod.DisplayName}' UUID='{entry.Mod.UUID}' Code={entry.Finding.Code} Severity={entry.Finding.Severity} Related='{related}' Message='{message}'");
+			}
+		}
+	}
+
 	public MainWindowViewModel() : base()
 	{
+		ModHealthSnapshots = new ReadOnlyObservableCollection<ModHealthSnapshot>(_modHealthSnapshotItems);
 		Services.RegisterSingleton<IModRegistryService>(new ModRegistryService(mods));
 
 		_settings.InitSubscriptions();
@@ -6169,6 +6298,26 @@ Directory the zip will be extracted to:
 		var modsConnection = mods.Connect();
 		modsConnection.Publish();
 
+		modsConnection
+			.AutoRefresh(x => x.IsActive)
+			.AutoRefresh(x => x.HasInvalidUUID)
+			.AutoRefresh(x => x.IsMissingDependency)
+			.AutoRefresh(x => x.TotalConflicts)
+			.AutoRefresh(x => x.ExtenderModStatus)
+			.AutoRefresh(x => x.OsirisModStatus)
+			.AutoRefresh(x => x.IsForceLoaded)
+			.AutoRefresh(x => x.IsForceLoadedMergedMod)
+			.AutoRefresh(x => x.ForceAllowInLoadOrder)
+			.AutoRefresh(x => x.DisplaySource)
+			.Throttle(TimeSpan.FromMilliseconds(300))
+			.ObserveOn(RxApp.MainThreadScheduler)
+			.Subscribe(_ => ScheduleModHealthRefresh());
+
+		Settings.WhenAnyValue(x => x.DebugModeEnabled)
+			.Skip(1)
+			.ObserveOn(RxApp.MainThreadScheduler)
+			.Subscribe(_ => ScheduleModHealthRefresh());
+
 		modsConnection.Filter(x => x.IsUserMod).Bind(out _userMods).Subscribe();
 		modsConnection.AutoRefresh(x => x.CanAddToLoadOrder).Filter(x => x.CanAddToLoadOrder).Bind(out addonMods).Subscribe();
 		modsConnection.AutoRefresh(x => x.ForceAllowInLoadOrder)
@@ -6360,6 +6509,7 @@ Directory the zip will be extracted to:
 
 		ActiveMods.CollectionChanged += (o, e) =>
 		{
+			ScheduleModHealthRefresh();
 			RefreshVisualDividers();
 			if (e.Action == NotifyCollectionChangedAction.Add || e.Action == NotifyCollectionChangedAction.Remove || e.Action == NotifyCollectionChangedAction.Reset)
 			{
@@ -6372,6 +6522,7 @@ Directory the zip will be extracted to:
 
 		InactiveMods.CollectionChanged += (o, e) =>
 		{
+			ScheduleModHealthRefresh();
 			RefreshVisualDividers();
 			ScheduleRefreshModCategories();
 		};

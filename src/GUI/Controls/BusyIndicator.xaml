@@ -7,7 +7,7 @@
 	Name="Root"
 	d:DesignHeight="100"
 	d:DesignWidth="100"
-	Foreground="#9b9b9b"
+	Foreground="{DynamicResource ReduxTextMutedBrush}"
 	mc:Ignorable="d">
 	<Grid>
 		<Grid.Resources>

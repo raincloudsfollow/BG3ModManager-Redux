@@ -90,7 +90,7 @@ public class AppKeys : ReactiveObject
 	[MenuSettings("Settings", "Open Keyboard Shortcuts")]
 	public Hotkey OpenKeybindings { get; private set; } = new Hotkey(Key.K, ModifierKeys.Control);
 
-	[MenuSettings("Settings", "Toggle Light/Dark Mode")]
+	[MenuSettings("Settings", "Cycle Theme")]
 	public Hotkey ToggleViewTheme { get; private set; } = new Hotkey(Key.L, ModifierKeys.Control);
 
 	//[MenuSettings("View", "Toggle Updates View")]

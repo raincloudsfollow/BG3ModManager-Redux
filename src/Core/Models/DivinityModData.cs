@@ -351,7 +351,7 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 			case DivinityOsirisModStatus.SCRIPTS:
 				return "Has Osiris Scripting";
 			case DivinityOsirisModStatus.MODFIXER:
-				return "Contains Legacy Mod Fixer. Legacy Mod Fixer files were detected inside this mod package. This does not mean Mod Fixer must be installed separately.";
+				return "Contains Mod Fixer. Mod Fixer files were detected inside this package. BG3 Patch 7 and newer generally do not require Mod Fixer, and it does not need to be installed separately.";
 			case DivinityOsirisModStatus.NONE:
 			default:
 				return "";

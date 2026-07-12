@@ -1007,20 +1007,22 @@
 					    RenderOptions.BitmapScalingMode="HighQuality"
 					    Stretch="UniformToFill"
 					    ToolTip="{Binding OsirisStatusToolTipText}"
-					    Visibility="{Binding OsirisStatusVisibility, FallbackValue=Collapsed}">
+					>
 						<Image.Style>
 							<Style TargetType="{x:Type Image}">
+								<Setter Property="Visibility" Value="Collapsed" />
 								<Style.Triggers>
 									<DataTrigger Binding="{Binding Path=OsirisModStatus}" Value="{x:Static dapp:DivinityOsirisModStatus.NONE}">
 										<Setter Property="Source" Value="{x:Null}" />
 									</DataTrigger>
-									<DataTrigger Binding="{Binding Path=OsirisModStatus}" Value="{x:Static dapp:DivinityOsirisModStatus.SCRIPTS}">
-										<Setter Property="Source" Value="{StaticResource OsirisImage}" />
-										<Setter Property="Opacity" Value="1.0" />
-									</DataTrigger>
-									<DataTrigger Binding="{Binding Path=OsirisModStatus}" Value="{x:Static dapp:DivinityOsirisModStatus.MODFIXER}">
-										<Setter Property="Source" Value="{StaticResource OsirisModFixerImage}" />
-										<Setter Property="Opacity" Value="1.0" />
+								<DataTrigger Binding="{Binding Path=OsirisModStatus}" Value="{x:Static dapp:DivinityOsirisModStatus.SCRIPTS}">
+									<Setter Property="Source" Value="{StaticResource OsirisImage}" />
+									<Setter Property="Opacity" Value="1.0" />
+									<Setter Property="Visibility" Value="Visible" />
+								</DataTrigger>
+								<DataTrigger Binding="{Binding Path=OsirisModStatus}" Value="{x:Static dapp:DivinityOsirisModStatus.MODFIXER}">
+									<Setter Property="Source" Value="{StaticResource OsirisModFixerImage}" />
+									<Setter Property="Opacity" Value="1.0" />
 									</DataTrigger>
 								</Style.Triggers>
 							</Style>
@@ -1222,6 +1224,50 @@
 					</Style>
 				</Image.Style>
 			</Image>
+			<Image Width="16" Height="16" Margin="6,0,0,0"
+				VerticalAlignment="Center"
+				RenderOptions.BitmapScalingMode="HighQuality"
+				Source="{StaticResource OsirisModFixerImage}"
+				Stretch="Uniform">
+				<Image.ToolTip>
+					<ToolTip Placement="Mouse" HorizontalOffset="12" VerticalOffset="10">
+						<Border MaxWidth="390"
+							Padding="12,10"
+							Background="{DynamicResource ReduxSurfaceElevatedBrush}"
+							BorderBrush="{DynamicResource ReduxWarningBrush}"
+							BorderThickness="1"
+							CornerRadius="8">
+							<StackPanel>
+								<TextBlock FontFamily="{DynamicResource Redux.FontFamily.UI}"
+									FontSize="13"
+									FontWeight="SemiBold"
+									Foreground="{DynamicResource ReduxWarningBrush}"
+									Text="Mod Fixer included" />
+								<TextBlock Margin="0,5,0,0"
+									FontFamily="{DynamicResource Redux.FontFamily.UI}"
+									Foreground="{DynamicResource ReduxTextPrimaryBrush}"
+									Text="This package contains Mod Fixer files, which older BG3 mods used to trigger story recompilation."
+									TextWrapping="Wrap" />
+								<TextBlock Margin="0,6,0,0"
+									FontFamily="{DynamicResource Redux.FontFamily.UI}"
+									Foreground="{DynamicResource ReduxTextSecondaryBrush}"
+									Text="BG3 Patch 7 and newer generally do not require Mod Fixer. You do not need to install it separately; this notice only reports that Mod Fixer files are bundled inside the package."
+									TextWrapping="Wrap" />
+							</StackPanel>
+						</Border>
+					</ToolTip>
+				</Image.ToolTip>
+				<Image.Style>
+					<Style TargetType="{x:Type Image}">
+						<Setter Property="Visibility" Value="Collapsed" />
+						<Style.Triggers>
+							<DataTrigger Binding="{Binding OsirisModStatus}" Value="{x:Static dapp:DivinityOsirisModStatus.MODFIXER}">
+								<Setter Property="Visibility" Value="Visible" />
+							</DataTrigger>
+						</Style.Triggers>
+					</Style>
+				</Image.Style>
+			</Image>
 		</StackPanel>
 	</DataTemplate>
 	<DataTemplate x:Key="ModCategoryTemplate" DataType="{x:Type data:DivinityModData}">
@@ -1231,6 +1277,15 @@
 				<DataTemplate>
 					<Border Margin="0,0,4,0" Padding="7,2" HorizontalAlignment="Left" VerticalAlignment="Center"
 						Background="{Binding SoftColor}" BorderBrush="{Binding Color}" BorderThickness="1" CornerRadius="8">
+						<Border.Style>
+							<Style TargetType="Border">
+								<Style.Triggers>
+									<DataTrigger Binding="{Binding Name}" Value="Uncategorized">
+										<Setter Property="Visibility" Value="Collapsed" />
+									</DataTrigger>
+								</Style.Triggers>
+							</Style>
+						</Border.Style>
 						<TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource ReduxTextPrimaryBrush}"
 							Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
 					</Border>
@@ -1308,13 +1363,15 @@
 	    ColumnHeaderContainerStyle="{StaticResource GridViewHiddenLeftContainerStyle}">
 		<GridView.Columns>
 			<GridViewColumn Width="45"
-			    behavior:ScreenReaderHelperBehavior.HelpText="The mod order index column"
-			    behavior:ScreenReaderHelperBehavior.Name="Index"
-			    Header="#"
-			    HeaderTemplate="{StaticResource GridViewTextblockHeaderTemplate}">
+				behavior:ScreenReaderHelperBehavior.HelpText="This override package is outside the numbered load order"
+				behavior:ScreenReaderHelperBehavior.Name="Not in load order">
 				<GridViewColumn.CellTemplate>
 					<DataTemplate>
-						<TextBlock Margin="2,0,2,0" Background="Transparent" Text="" />
+						<TextBlock Margin="2,0,2,0"
+							HorizontalAlignment="Center"
+							Foreground="{DynamicResource ReduxTextMutedBrush}"
+							Text="~"
+							ToolTip="Not part of the numbered load order" />
 					</DataTemplate>
 				</GridViewColumn.CellTemplate>
 			</GridViewColumn>

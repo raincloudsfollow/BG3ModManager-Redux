@@ -98,6 +98,23 @@ public partial class SettingsWindow : SettingsWindowBase
 		}
 	}
 
+	private void ThemeCard_Click(object sender, RoutedEventArgs e)
+	{
+		if (sender is RadioButton { Tag: ReduxThemeType theme })
+		{
+			ThemeComboBox.SelectedValue = theme;
+		}
+	}
+
+	private void ThemeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+	{
+		if (ThemeComboBox.SelectedValue is not ReduxThemeType theme) return;
+
+		ReduxDarkThemeCard.IsChecked = theme == ReduxThemeType.ReduxDark;
+		ReduxLightThemeCard.IsChecked = theme == ReduxThemeType.ReduxLight;
+		ParchmentThemeCard.IsChecked = theme == ReduxThemeType.Parchment;
+	}
+
 	private void CreateSettingsElements(ReactiveObject source, Type settingsModelType, AutoGrid targetGrid)
 	{
 		var sorter = new SortSettings();

@@ -227,6 +227,14 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		};
 		automaticItem.Click += (_, _) => ViewModel.ToggleModCategoryAssignment(mod, null);
 		categoryMenu.Items.Add(automaticItem);
+		var noCategoryItem = new MenuItem
+		{
+			Header = "No Category",
+			IsCheckable = true,
+			IsChecked = ViewModel.HasNoCategoryAssignment(mod)
+		};
+		noCategoryItem.Click += (_, _) => ViewModel.ToggleModCategoryAssignment(mod, MainWindowViewModel.NoCategoryAssignment);
+		categoryMenu.Items.Add(noCategoryItem);
 		categoryMenu.Items.Add(new Separator());
 
 		foreach (var category in ViewModel.GetAssignableModCategories())
@@ -495,6 +503,17 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				}
 			}
 		}
+	}
+
+	private void KeepSelectionInSingleList(ModListView selectedList, SelectionChangedEventArgs e)
+	{
+		// Ctrl/Shift multi-selection remains available inside the active list. Once a
+		// user starts selecting in another panel, clear the old panel so Redux has one
+		// visually unambiguous selection context.
+		if (e?.AddedItems == null || e.AddedItems.Count == 0) return;
+		if (!ReferenceEquals(selectedList, ActiveModsListView)) ActiveModsListView.ClearSelectedItems();
+		if (!ReferenceEquals(selectedList, InactiveModsListView)) InactiveModsListView.ClearSelectedItems();
+		if (!ReferenceEquals(selectedList, ForceLoadedModsListView)) ForceLoadedModsListView.ClearSelectedItems();
 	}
 
 	private void ModListView_ButtonClick(object sender, RoutedEventArgs e)
@@ -873,6 +892,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				.ObserveOn(RxApp.MainThreadScheduler)
 				.Subscribe((e) =>
 				{
+					KeepSelectionInSingleList(ActiveModsListView, e.EventArgs);
 					UpdateIsSelected(e.EventArgs, ViewModel.ActiveMods);
 					UpdateModDetailsSelection(e.EventArgs);
 				}));
@@ -881,6 +901,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				.ObserveOn(RxApp.MainThreadScheduler)
 				.Subscribe((e) =>
 				{
+					KeepSelectionInSingleList(InactiveModsListView, e.EventArgs);
 					UpdateIsSelected(e.EventArgs, ViewModel.InactiveMods);
 					UpdateModDetailsSelection(e.EventArgs);
 				}));
@@ -889,6 +910,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				.ObserveOn(RxApp.MainThreadScheduler)
 				.Subscribe((e) =>
 				{
+					KeepSelectionInSingleList(ForceLoadedModsListView, e.EventArgs);
 					UpdateIsSelected(e.EventArgs, ViewModel.ForceLoadedMods);
 					UpdateModDetailsSelection(e.EventArgs);
 				}));
@@ -909,8 +931,15 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				d(this.OneWayBind(ViewModel, vm => vm.DisplayInactiveMods, v => v.InactiveModsListView.ItemsSource));
 				d(this.OneWayBind(ViewModel, vm => vm.ForceLoadedMods, v => v.ForceLoadedModsListView.ItemsSource));
 
-				d(this.OneWayBind(ViewModel, vm => vm.HasForceLoadedMods, v => v.ForceLoadedModsListView.Visibility, BoolToVisibilityConverter.FromBool));
-				d(this.OneWayBind(ViewModel, vm => vm.HasForceLoadedMods, v => v.ActiveModListViewGridSplitter.Visibility, BoolToVisibilityConverter.FromBool));
+				d(this.OneWayBind(ViewModel, vm => vm.HasForceLoadedMods, v => v.AlwaysLoadedSectionGrid.Visibility, BoolToVisibilityConverter.FromBool));
+				d(ViewModel.WhenAnyValue(x => x.HasForceLoadedMods, x => x.IsAlwaysLoadedExpanded)
+					.ObserveOn(RxApp.MainThreadScheduler)
+					.Subscribe(state =>
+					{
+						var showContents = state.Item1 && state.Item2;
+						ForceLoadedModsListView.Visibility = BoolToVisibilityConverter.FromBool(showContents);
+						ActiveModListViewGridSplitter.Visibility = BoolToVisibilityConverter.FromBool(showContents);
+					}));
 
 				d(this.Bind(ViewModel, vm => vm.ActiveModFilterText, v => v.ActiveModsFilterTextBox.Text));
 				d(this.Bind(ViewModel, vm => vm.InactiveModFilterText, v => v.InactiveModsFilterTextBox.Text));
@@ -929,19 +958,22 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 				var zeroHeight = (GridLength)gridLengthConverter.ConvertFrom(0);
 				var forceModsHeight = (GridLength)gridLengthConverter.ConvertFrom("2*");
 
-				d(ViewModel.WhenAnyValue(x => x.HasForceLoadedMods).ObserveOn(RxApp.MainThreadScheduler).Subscribe((b) =>
+				d(ViewModel.WhenAnyValue(x => x.HasForceLoadedMods, x => x.IsAlwaysLoadedExpanded)
+					.ObserveOn(RxApp.MainThreadScheduler).Subscribe((state) =>
 				{
+					var hasAlwaysLoadedMods = state.Item1;
+					var showAlwaysLoadedContents = hasAlwaysLoadedMods && state.Item2;
 					foreach (var row in this.ActiveModListGrid.RowDefinitions.Where(x => x.Name != "ActiveModsListRow"))
 					{
-						if (b)
+						if (hasAlwaysLoadedMods)
 						{
 							if (row.Name == "ActiveModsListGridRow")
 							{
-								row.Height = GridLength.Auto;
+								row.Height = showAlwaysLoadedContents ? GridLength.Auto : zeroHeight;
 							}
 							else if (row.Name == "ActiveModsListForcedModsRow")
 							{
-								row.Height = forceModsHeight;
+								row.Height = showAlwaysLoadedContents ? forceModsHeight : GridLength.Auto;
 							}
 						}
 						else

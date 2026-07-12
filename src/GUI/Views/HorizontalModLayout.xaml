@@ -149,11 +149,12 @@
 						<ControlTemplate TargetType="{x:Type TabControl}">
 							<Grid KeyboardNavigation.TabNavigation="Local">
 								<Grid.RowDefinitions>
-								<RowDefinition Height="40" />
+								<RowDefinition Height="42" />
 									<RowDefinition Height="1" />
 									<RowDefinition Height="*" />
 								</Grid.RowDefinitions>
-							<TabPanel Margin="14,2,14,0"
+							<TabPanel Margin="14,2,14,2"
+									ClipToBounds="False"
 									IsItemsHost="True"
 									KeyboardNavigation.TabIndex="1" />
 								<Border Grid.Row="1"
@@ -173,7 +174,8 @@
 			<Style x:Key="ModDetailsTabItemStyle" TargetType="{x:Type TabItem}">
 				<Setter Property="Background" Value="Transparent" />
 				<Setter Property="BorderBrush" Value="Transparent" />
-				<Setter Property="BorderThickness" Value="0,0,0,2" />
+				<Setter Property="BorderThickness" Value="1" />
+				<Setter Property="ClipToBounds" Value="False" />
 				<Setter Property="Cursor" Value="Hand" />
 				<Setter Property="FocusVisualStyle" Value="{x:Null}" />
 				<Setter Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
@@ -183,26 +185,29 @@
 				<Setter Property="Template">
 					<Setter.Value>
 						<ControlTemplate TargetType="{x:Type TabItem}">
-							<Border x:Name="TabBorder"
-								Padding="{TemplateBinding Padding}"
-								Background="{TemplateBinding Background}"
-								BorderBrush="{TemplateBinding BorderBrush}"
-								BorderThickness="{TemplateBinding BorderThickness}"
-								CornerRadius="6,6,0,0">
+							<Grid Margin="2,1" ClipToBounds="False">
+								<Rectangle x:Name="TabBorder"
+									Fill="{TemplateBinding Background}"
+									RadiusX="7"
+									RadiusY="7"
+									Stroke="{TemplateBinding BorderBrush}"
+									StrokeThickness="1" />
 								<TextBlock x:Name="HeaderText"
+									Margin="{TemplateBinding Padding}"
 									HorizontalAlignment="Center"
 									VerticalAlignment="Center"
 									Foreground="{DynamicResource ReduxTextMutedBrush}"
 									Text="{TemplateBinding Header}" />
-							</Border>
+							</Grid>
 							<ControlTemplate.Triggers>
 								<Trigger Property="IsMouseOver" Value="True">
-									<Setter TargetName="TabBorder" Property="Background" Value="{DynamicResource ReduxAccentSoftBrush}" />
+									<Setter TargetName="TabBorder" Property="Fill" Value="{DynamicResource ReduxAccentSoftBrush}" />
 									<Setter TargetName="HeaderText" Property="Foreground" Value="{DynamicResource ReduxTextPrimaryBrush}" />
 								</Trigger>
 								<Trigger Property="IsSelected" Value="True">
-									<Setter Property="Background" Value="{DynamicResource ReduxAccentSoftBrush}" />
-									<Setter Property="BorderBrush" Value="{DynamicResource ReduxAccentBrush}" />
+									<Setter Property="Panel.ZIndex" Value="1" />
+									<Setter TargetName="TabBorder" Property="Fill" Value="{DynamicResource ReduxAccentSoftBrush}" />
+									<Setter TargetName="TabBorder" Property="Stroke" Value="{DynamicResource ReduxAccentBrush}" />
 									<Setter TargetName="HeaderText" Property="Foreground" Value="{DynamicResource ReduxAccentHoverBrush}" />
 									<Setter TargetName="HeaderText" Property="FontWeight" Value="SemiBold" />
 								</Trigger>
@@ -279,7 +284,7 @@
 			<DataTemplate x:Key="PlatformAuthorButtonTemplate" DataType="{x:Type data:DivinityModData}">
 				<StackPanel Orientation="Horizontal">
 					<ContentControl Margin="0,0,6,0" Content="{Binding}" ContentTemplate="{StaticResource PlatformIconPresenterTemplate}" />
-					<TextBlock VerticalAlignment="Center" Text="{Binding Metadata.AuthorLabel}" />
+					<TextBlock VerticalAlignment="Center" Text="{Binding Metadata.UploaderLabel}" />
 				</StackPanel>
 			</DataTemplate>
 			<DataTemplate x:Key="PlatformSourceButtonTemplate" DataType="{x:Type data:DivinityModData}">
@@ -452,7 +457,7 @@
 									ContentTemplate="{StaticResource ModCategoryTemplate}" />
 							</StackPanel>
 							<WrapPanel Margin="0,5,0,0">
-								<Border ToolTip="Legacy Mod Fixer files were detected inside this mod package. This does not mean Mod Fixer must be installed separately.">
+								<Border ToolTip="Contains Mod Fixer. BG3 Patch 7 and newer generally do not require it, and Mod Fixer does not need to be installed separately.">
 									<Border.Style>
 										<Style BasedOn="{StaticResource ModDetailsLegacyStatusChipStyle}" TargetType="{x:Type Border}">
 											<Setter Property="Visibility" Value="Collapsed" />
@@ -463,14 +468,14 @@
 											</Style.Triggers>
 										</Style>
 									</Border.Style>
-									<TextBlock Foreground="{DynamicResource ReduxWarningBrush}" FontWeight="SemiBold" Text="Contains Legacy Mod Fixer" />
+									<TextBlock Foreground="{DynamicResource ReduxWarningBrush}" FontWeight="SemiBold" Text="Contains Mod Fixer" />
 								</Border>
 								<Border Style="{StaticResource ModDetailsLegacyStatusChipStyle}"
 									ToolTip="This package contains files that directly override built-in game files. Those overrides remain active while the .pak exists in the Mods folder."
 									Visibility="{Binding IsForceLoaded, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
 									<TextBlock Foreground="{DynamicResource ReduxWarningBrush}" FontWeight="SemiBold" Text="Overrides Game Files" />
 								</Border>
-								<Border ToolTip="This is an Always Loaded package, not a normal load-order entry. It usually is not written to modsettings.lsx.">
+								<Border ToolTip="This package overrides built-in game files and loads whenever its .pak is present. It is outside the normal load order and usually is not written to modsettings.lsx.">
 									<Border.Style>
 										<Style BasedOn="{StaticResource ModDetailsLegacyStatusChipStyle}" TargetType="{x:Type Border}">
 											<Setter Property="Visibility" Value="Collapsed" />
@@ -1159,15 +1164,40 @@
 					HorizontalAlignment="Stretch"
 					VerticalAlignment="Stretch"
 					Background="{DynamicResource {x:Static adonisUI:Brushes.Layer1BackgroundBrush}}" />
-				<Grid Grid.Row="2">
+				<Grid x:Name="AlwaysLoadedSectionGrid" Grid.Row="2">
 					<Grid.RowDefinitions>
 						<RowDefinition Height="Auto" />
 						<RowDefinition Height="*" />
 					</Grid.RowDefinitions>
-					<TextBlock HorizontalAlignment="Center"
-						FontSize="16"
-						Text="Always Loaded"
-						ToolTip="These packages override built-in game files directly and are not normal load-order entries." />
+					<Grid Margin="8,4,8,3">
+						<Grid.ColumnDefinitions>
+							<ColumnDefinition Width="*" />
+							<ColumnDefinition Width="Auto" />
+						</Grid.ColumnDefinitions>
+						<StackPanel VerticalAlignment="Center">
+							<TextBlock FontSize="14" FontWeight="SemiBold" Text="Override Mods" />
+							<TextBlock FontSize="11" Foreground="{DynamicResource ReduxTextMutedBrush}"
+								Text="Always loaded while installed; overrides built-in game files outside the normal load order" />
+						</StackPanel>
+						<ToggleButton Grid.Column="1"
+							Width="30" Height="28" Padding="0"
+							Style="{StaticResource CategoryPanelToggleStyle}"
+							IsChecked="{Binding IsAlwaysLoadedExpanded, Mode=TwoWay}"
+							ToolTip="Collapse or expand Override Mods">
+							<TextBlock Text="⌃" FontSize="15">
+								<TextBlock.Style>
+									<Style TargetType="TextBlock">
+										<Setter Property="Text" Value="⌃" />
+										<Style.Triggers>
+											<DataTrigger Binding="{Binding IsAlwaysLoadedExpanded}" Value="False">
+												<Setter Property="Text" Value="⌄" />
+											</DataTrigger>
+										</Style.Triggers>
+									</Style>
+								</TextBlock.Style>
+							</TextBlock>
+						</ToggleButton>
+					</Grid>
 					<c:ModListView x:Name="ForceLoadedModsListView"
 						Grid.Row="1"
 						MaxHeight="99999"

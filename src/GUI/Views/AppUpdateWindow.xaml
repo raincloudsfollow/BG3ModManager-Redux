@@ -77,7 +77,7 @@
 				Orientation="Horizontal">
 				<Button x:Name="ConfirmButton"
 					HorizontalAlignment="Center"
-					Background="#FF267E26"
+					Background="{DynamicResource ReduxSuccessBrush}"
 					Content="Download"
 					ToolTip="Download Update">
 					<Button.Resources>

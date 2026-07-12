@@ -74,20 +74,39 @@ public sealed class ModMetadataViewData : ReactiveObject
 		? $"{SourceLabel} version {Version}"
 		: $"Version {Version}";
 
-	public string AuthorLabel => $"By {Author}";
+	public string AuthorLabel => SourceType == ModSourceType.NEXUSMODS ? $"Created by {Author}" : $"By {Author}";
+	public string Uploader => SourceType == ModSourceType.NEXUSMODS
+		? (!String.IsNullOrWhiteSpace(_mod.NexusModsData?.UploadedBy) ? _mod.NexusModsData.UploadedBy : _mod.NexusModsData?.Author)
+		: Author;
+	public string UploaderLabel => $"Uploaded by {Uploader}";
 	public string AuthorPageUrl
 	{
 		get
 		{
-			if (SourceType == ModSourceType.NEXUSMODS && !String.IsNullOrWhiteSpace(_mod.NexusModsData?.Author))
-				return $"https://next.nexusmods.com/profile/{Uri.EscapeDataString(_mod.NexusModsData.Author)}";
+			if (SourceType == ModSourceType.NEXUSMODS)
+			{
+				if (_mod.NexusModsData?.UploadedUsersProfileUrl != null)
+					return _mod.NexusModsData.UploadedUsersProfileUrl.AbsoluteUri;
+				if (!String.IsNullOrWhiteSpace(Uploader))
+					return $"https://next.nexusmods.com/profile/{Uri.EscapeDataString(Uploader)}";
+			}
 			// mod.io author profiles are intentionally presented as plain text in Redux.
 			// The mod page remains the reliable clickable destination for mod.io metadata.
 			return String.Empty;
 		}
 	}
 	public Visibility AuthorPageVisibility => !String.IsNullOrWhiteSpace(AuthorPageUrl) ? Visibility.Visible : Visibility.Collapsed;
-	public Visibility LocalAuthorVisibility => AuthorPageVisibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+	public Visibility LocalAuthorVisibility
+	{
+		get
+		{
+			if (String.IsNullOrWhiteSpace(Author)) return Visibility.Collapsed;
+			if (SourceType == ModSourceType.NEXUSMODS &&
+				String.Equals(Author, Uploader, StringComparison.OrdinalIgnoreCase))
+				return Visibility.Collapsed;
+			return Visibility.Visible;
+		}
+	}
 
 	public string UpdatedLabel
 	{
@@ -171,6 +190,8 @@ public sealed class ModMetadataViewData : ReactiveObject
 		this.RaisePropertyChanged(nameof(LinkStatus));
 		this.RaisePropertyChanged(nameof(VersionLabel));
 		this.RaisePropertyChanged(nameof(AuthorLabel));
+		this.RaisePropertyChanged(nameof(Uploader));
+		this.RaisePropertyChanged(nameof(UploaderLabel));
 		this.RaisePropertyChanged(nameof(AuthorPageUrl));
 		this.RaisePropertyChanged(nameof(AuthorPageVisibility));
 		this.RaisePropertyChanged(nameof(LocalAuthorVisibility));

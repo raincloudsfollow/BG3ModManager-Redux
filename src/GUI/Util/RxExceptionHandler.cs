@@ -13,7 +13,15 @@ class RxExceptionHandler : IObserver<Exception>
 
 		var message = $"(OnNext) Exception encountered:\nType: {value.GetType()}\tMessage: {value.Message}\nSource: {value.Source}\nStackTrace: {value.StackTrace}";
 		DivinityApp.Log(message);
-		MessageBox.Show(message, "Error Encountered", MessageBoxButton.OK, MessageBoxImage.Error);
+		if (view != null)
+		{
+			Xceed.Wpf.Toolkit.MessageBox.Show(view, message, "Error Encountered", MessageBoxButton.OK,
+				MessageBoxImage.Error, MessageBoxResult.OK, view.MessageBoxStyle);
+		}
+		else
+		{
+			MessageBox.Show(message, "Error Encountered", MessageBoxButton.OK, MessageBoxImage.Error);
+		}
 		//MessageBoxResult result = Xceed.Wpf.Toolkit.MessageBox.Show(view, message, "Error Encountered", MessageBoxButton.OK, MessageBoxImage.Error, MessageBoxResult.OK, view.MainWindowMessageBox_OK.Style);
 		//RxApp.MainThreadScheduler.Schedule(() => { throw value; });
 	}

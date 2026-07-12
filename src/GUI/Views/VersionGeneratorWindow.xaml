@@ -13,7 +13,7 @@
 	Height="300"
 	FontFamily="{DynamicResource Redux.FontFamily.UI}"
 	Background="{DynamicResource {x:Static adonisUI:Brushes.Layer0BackgroundBrush}}"
-	TitleBarBackground="#4e38c9"
+	TitleBarBackground="{DynamicResource ReduxSurfaceElevatedBrush}"
 	TitleBarForeground="{DynamicResource {x:Static adonisUI:Brushes.AccentForegroundBrush}}"
 	WindowStartupLocation="CenterOwner"
 	mc:Ignorable="d">

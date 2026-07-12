@@ -146,6 +146,12 @@ public class NexusModsModData : INotifyPropertyChanged, IExternalModMetadata
 	[JsonProperty("author")]
 	public string Author { get; set; }
 
+	[JsonProperty("uploaded_by")]
+	public string UploadedBy { get; set; }
+
+	[JsonProperty("uploaded_users_profile_url")]
+	public Uri UploadedUsersProfileUrl { get; set; }
+
 	[JsonProperty("contains_adult_content")]
 	public bool ContainsAdultContent { get; set; }
 
