@@ -113,6 +113,12 @@ public class DivinityModManagerSettings : ReactiveObject
 	[SettingsEntry("Theme", "Choose the Redux color palette. Themes change colors only; layout, typography, icons, and behavior remain shared.", HideFromUI = true)]
 	[DataMember, Reactive] public ReduxThemeType ColorTheme { get; set; } = ReduxThemeType.ReduxDark;
 
+	[DefaultValue(false)]
+	[DataMember, Reactive] public bool ReduxPreviewWarningAcknowledged { get; set; }
+
+	[SettingsEntry("Show Redux preview warning again", "Clear the saved acknowledgement so the work-in-progress warning appears again the next time Redux starts.")]
+	[Reactive] public bool ResetReduxPreviewWarningAcknowledgement { get; set; }
+
 	// Redux mod-list column choices. These are managed from the column-header
 	// context menu, so they stay out of the main Settings window.
 	[DefaultValue(true)]
@@ -141,6 +147,8 @@ public class DivinityModManagerSettings : ReactiveObject
 	[DataMember, Reactive] public bool HideEmptyModCategories { get; set; }
 
 	[DataMember, Reactive] public List<string> CustomModCategories { get; set; } = new();
+	// Redux-only presentation order for the category sidebar. This never changes mod assignments or load order.
+	[DataMember, Reactive] public List<string> ModCategoryDisplayOrder { get; set; } = new();
 	// Legacy single-category assignments are retained for migration from early Redux builds.
 	[DataMember, Reactive] public Dictionary<string, string> ModCategoryOverrides { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 	[DataMember, Reactive] public Dictionary<string, List<string>> ModCategoryAssignments { get; set; } = new(StringComparer.OrdinalIgnoreCase);
@@ -267,6 +275,7 @@ public class DivinityModManagerSettings : ReactiveObject
 		}
 		DarkThemeEnabled = ColorTheme == ReduxThemeType.ReduxDark;
 		CustomModCategories ??= new List<string>();
+		ModCategoryDisplayOrder ??= new List<string>();
 		ModCategoryOverrides = ModCategoryOverrides != null
 			? new Dictionary<string, string>(ModCategoryOverrides, StringComparer.OrdinalIgnoreCase)
 			: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -342,6 +351,15 @@ public class DivinityModManagerSettings : ReactiveObject
 			{
 				ModioSupportWarningAcknowledged = false;
 				ResetModioSupportWarningAcknowledgement = false;
+				CanSaveSettings = true;
+			});
+
+		this.WhenAnyValue(x => x.ResetReduxPreviewWarningAcknowledgement)
+			.Where(reset => reset)
+			.Subscribe(_ =>
+			{
+				ReduxPreviewWarningAcknowledged = false;
+				ResetReduxPreviewWarningAcknowledgement = false;
 				CanSaveSettings = true;
 			});
 

@@ -594,6 +594,15 @@
 					<Setter Property="Background" Value="{Binding SelectedColor, Converter={StaticResource StringToLinearBrushConverter}}" />
 				</MultiDataTrigger.Setters>
 			</MultiDataTrigger>
+			<MultiDataTrigger>
+				<MultiDataTrigger.Conditions>
+					<Condition Binding="{Binding IsForceLoaded}" Value="True" />
+					<Condition Binding="{Binding IsForceLoadedMergedMod}" Value="False" />
+					<Condition Binding="{Binding ForceAllowInLoadOrder}" Value="False" />
+				</MultiDataTrigger.Conditions>
+				<Setter Property="BorderBrush" Value="{DynamicResource ReduxWarningBrush}" />
+				<Setter Property="BorderThickness" Value="2,0,0,0" />
+			</MultiDataTrigger>
 		</Style.Triggers>
 	</Style>
 	<Style x:Key="DivinityModUpdateNewListItem" BasedOn="{StaticResource {x:Type ListViewItem}}" TargetType="{x:Type ListViewItem}">
@@ -805,19 +814,6 @@
 					    Foreground="Lime"
 					    Text="(Editor Project)"
 					    Visibility="{Binding IsEditorMod, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}" />
-					<TextBlock HorizontalAlignment="Right"
-					    Foreground="{DynamicResource ReduxWarningBrush}"
-					    Visibility="{Binding IsForceLoaded, Converter={StaticResource BoolToVisibilityConverter}, FallbackValue=Collapsed}">
-						<TextBlock.Style>
-							<Style BasedOn="{StaticResource {x:Type TextBlock}}" TargetType="TextBlock">
-								<Setter Property="Text" Value="Always Loaded" />
-								<Style.Triggers>
-									<DataTrigger Binding="{Binding IsForceLoadedMergedMod}" Value="True"><Setter Property="Text" Value="Contains File Overrides" /></DataTrigger>
-									<DataTrigger Binding="{Binding ForceAllowInLoadOrder}" Value="True"><Setter Property="Text" Value="Always Loaded + Load Order Entry" /></DataTrigger>
-								</Style.Triggers>
-							</Style>
-						</TextBlock.Style>
-					</TextBlock>
 				</StackPanel>
 			</Grid>
 
@@ -830,6 +826,45 @@
 						</Border>
 					</DataTemplate></ItemsControl.ItemTemplate>
 				</ItemsControl>
+				<Border Margin="0,0,6,0" Padding="8,3" BorderThickness="1" CornerRadius="8">
+					<Border.Style><Style TargetType="Border">
+						<Setter Property="Background" Value="{DynamicResource ReduxSuccessSoftBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource ReduxSuccessBrush}" />
+						<Style.Triggers>
+							<DataTrigger Binding="{Binding IsActive}" Value="False">
+								<Setter Property="Background" Value="{DynamicResource ReduxSurfaceMutedBrush}" />
+								<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
+							</DataTrigger>
+							<MultiDataTrigger>
+								<MultiDataTrigger.Conditions>
+									<Condition Binding="{Binding IsForceLoaded}" Value="True" />
+									<Condition Binding="{Binding IsForceLoadedMergedMod}" Value="False" />
+									<Condition Binding="{Binding ForceAllowInLoadOrder}" Value="False" />
+								</MultiDataTrigger.Conditions>
+								<Setter Property="Background" Value="{DynamicResource ReduxAccentSoftBrush}" />
+								<Setter Property="BorderBrush" Value="{DynamicResource ReduxAccentBrush}" />
+							</MultiDataTrigger>
+						</Style.Triggers>
+					</Style></Border.Style>
+					<TextBlock Margin="0" FontSize="11" FontWeight="SemiBold">
+						<TextBlock.Style><Style TargetType="TextBlock">
+							<Setter Property="Foreground" Value="{DynamicResource ReduxSuccessBrush}" /><Setter Property="Text" Value="Active" />
+							<Style.Triggers>
+								<DataTrigger Binding="{Binding IsActive}" Value="False">
+									<Setter Property="Foreground" Value="{DynamicResource ReduxTextMutedBrush}" /><Setter Property="Text" Value="Inactive" />
+								</DataTrigger>
+								<MultiDataTrigger>
+									<MultiDataTrigger.Conditions>
+										<Condition Binding="{Binding IsForceLoaded}" Value="True" />
+										<Condition Binding="{Binding IsForceLoadedMergedMod}" Value="False" />
+										<Condition Binding="{Binding ForceAllowInLoadOrder}" Value="False" />
+									</MultiDataTrigger.Conditions>
+									<Setter Property="Foreground" Value="{DynamicResource ReduxAccentHoverBrush}" />
+									<Setter Property="Text" Value="Always Loaded" />
+								</MultiDataTrigger>
+							</Style.Triggers>
+						</Style></TextBlock.Style>
+					</TextBlock>
+				</Border>
 				<Border Margin="0,0,6,0" Padding="8,3" BorderThickness="1" CornerRadius="8">
 					<Border.Style><Style TargetType="Border">
 						<Setter Property="Background" Value="#168F879E" />
@@ -861,23 +896,6 @@
 						<TextBlock Margin="0" VerticalAlignment="Center" FontSize="11" FontWeight="SemiBold" Text="{Binding DisplaySource}" />
 					</StackPanel>
 				</Border>
-				<Border Padding="8,3" BorderThickness="1" CornerRadius="8">
-					<Border.Style><Style TargetType="Border">
-						<Setter Property="Background" Value="{DynamicResource ReduxSuccessSoftBrush}" /><Setter Property="BorderBrush" Value="{DynamicResource ReduxSuccessBrush}" />
-						<Style.Triggers><DataTrigger Binding="{Binding IsActive}" Value="False">
-							<Setter Property="Background" Value="{DynamicResource ReduxSurfaceMutedBrush}" />
-							<Setter Property="BorderBrush" Value="{DynamicResource ReduxBorderStrongBrush}" />
-						</DataTrigger></Style.Triggers>
-					</Style></Border.Style>
-					<TextBlock Margin="0" FontSize="11" FontWeight="SemiBold">
-						<TextBlock.Style><Style TargetType="TextBlock">
-							<Setter Property="Foreground" Value="{DynamicResource ReduxSuccessBrush}" /><Setter Property="Text" Value="Active" />
-							<Style.Triggers><DataTrigger Binding="{Binding IsActive}" Value="False">
-								<Setter Property="Foreground" Value="{DynamicResource ReduxTextMutedBrush}" /><Setter Property="Text" Value="Inactive" />
-							</DataTrigger></Style.Triggers>
-						</Style></TextBlock.Style>
-					</TextBlock>
-				</Border>
 			</WrapPanel>
 
 			<Separator Margin="4,0" Background="{DynamicResource ReduxBorderBrush}" />
@@ -887,7 +905,26 @@
 				<Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
 				<TextBlock Foreground="{DynamicResource ReduxTextMutedBrush}" Text="File" /><TextBlock Grid.Column="1" Text="{Binding FileName}" TextTrimming="CharacterEllipsis" />
 				<TextBlock Grid.Row="1" Foreground="{DynamicResource ReduxTextMutedBrush}" Text="Last modified" /><TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LastModifiedDateText}" />
-				<TextBlock Grid.Row="2" Foreground="{DynamicResource ReduxTextMutedBrush}" Text="Load order" /><TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding LoadOrderDisplayText}" />
+				<Grid Grid.Row="2" Grid.ColumnSpan="2">
+					<Grid.Style>
+						<Style TargetType="Grid">
+							<Setter Property="Visibility" Value="Visible" />
+							<Style.Triggers>
+								<MultiDataTrigger>
+									<MultiDataTrigger.Conditions>
+										<Condition Binding="{Binding IsForceLoaded}" Value="True" />
+										<Condition Binding="{Binding IsForceLoadedMergedMod}" Value="False" />
+										<Condition Binding="{Binding ForceAllowInLoadOrder}" Value="False" />
+									</MultiDataTrigger.Conditions>
+									<Setter Property="Visibility" Value="Collapsed" />
+								</MultiDataTrigger>
+							</Style.Triggers>
+						</Style>
+					</Grid.Style>
+					<Grid.ColumnDefinitions><ColumnDefinition Width="112" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+					<TextBlock Foreground="{DynamicResource ReduxTextMutedBrush}" Text="Load order" />
+					<TextBlock Grid.Column="1" Text="{Binding LoadOrderDisplayText}" />
+				</Grid>
 				<TextBlock Grid.Row="3" Foreground="{DynamicResource ReduxTextMutedBrush}" Text="UUID" /><TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding UUID}" TextTrimming="CharacterEllipsis" ToolTip="{Binding UUID}" />
 			</Grid>
 
@@ -1023,7 +1060,8 @@
 								<DataTrigger Binding="{Binding Path=OsirisModStatus}" Value="{x:Static dapp:DivinityOsirisModStatus.MODFIXER}">
 									<Setter Property="Source" Value="{StaticResource OsirisModFixerImage}" />
 									<Setter Property="Opacity" Value="1.0" />
-									</DataTrigger>
+									<Setter Property="Visibility" Value="Visible" />
+								</DataTrigger>
 								</Style.Triggers>
 							</Style>
 						</Image.Style>
@@ -1220,50 +1258,6 @@
 								</MultiDataTrigger.Conditions>
 								<Setter Property="Visibility" Value="Visible" />
 							</MultiDataTrigger>
-						</Style.Triggers>
-					</Style>
-				</Image.Style>
-			</Image>
-			<Image Width="16" Height="16" Margin="6,0,0,0"
-				VerticalAlignment="Center"
-				RenderOptions.BitmapScalingMode="HighQuality"
-				Source="{StaticResource OsirisModFixerImage}"
-				Stretch="Uniform">
-				<Image.ToolTip>
-					<ToolTip Placement="Mouse" HorizontalOffset="12" VerticalOffset="10">
-						<Border MaxWidth="390"
-							Padding="12,10"
-							Background="{DynamicResource ReduxSurfaceElevatedBrush}"
-							BorderBrush="{DynamicResource ReduxWarningBrush}"
-							BorderThickness="1"
-							CornerRadius="8">
-							<StackPanel>
-								<TextBlock FontFamily="{DynamicResource Redux.FontFamily.UI}"
-									FontSize="13"
-									FontWeight="SemiBold"
-									Foreground="{DynamicResource ReduxWarningBrush}"
-									Text="Mod Fixer included" />
-								<TextBlock Margin="0,5,0,0"
-									FontFamily="{DynamicResource Redux.FontFamily.UI}"
-									Foreground="{DynamicResource ReduxTextPrimaryBrush}"
-									Text="This package contains Mod Fixer files, which older BG3 mods used to trigger story recompilation."
-									TextWrapping="Wrap" />
-								<TextBlock Margin="0,6,0,0"
-									FontFamily="{DynamicResource Redux.FontFamily.UI}"
-									Foreground="{DynamicResource ReduxTextSecondaryBrush}"
-									Text="BG3 Patch 7 and newer generally do not require Mod Fixer. You do not need to install it separately; this notice only reports that Mod Fixer files are bundled inside the package."
-									TextWrapping="Wrap" />
-							</StackPanel>
-						</Border>
-					</ToolTip>
-				</Image.ToolTip>
-				<Image.Style>
-					<Style TargetType="{x:Type Image}">
-						<Setter Property="Visibility" Value="Collapsed" />
-						<Style.Triggers>
-							<DataTrigger Binding="{Binding OsirisModStatus}" Value="{x:Static dapp:DivinityOsirisModStatus.MODFIXER}">
-								<Setter Property="Visibility" Value="Visible" />
-							</DataTrigger>
 						</Style.Triggers>
 					</Style>
 				</Image.Style>

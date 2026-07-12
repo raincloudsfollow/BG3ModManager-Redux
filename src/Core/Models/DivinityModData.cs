@@ -457,10 +457,12 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 		// Presentation-only provider label used by the mod list.
 		this.WhenAnyValue(x => x.Metadata.Title)
 			.ToUIProperty(this, x => x.DisplayTitle, DisplayName);
-		this.WhenAnyValue(x => x.IsActive, x => x.Index)
-			.Select(state => state.Item1 && state.Item2 >= 0
-				? state.Item2.ToString(CultureInfo.CurrentCulture)
-				: "Not active")
+		this.WhenAnyValue(x => x.IsActive, x => x.Index, x => x.IsForceLoaded, x => x.IsForceLoadedMergedMod, x => x.ForceAllowInLoadOrder)
+			.Select(state => state.Item3 && !state.Item4 && !state.Item5
+				? "Always loaded"
+				: state.Item1 && state.Item2 >= 0
+					? state.Item2.ToString(CultureInfo.CurrentCulture)
+					: "Not active")
 			.ToUIProperty(this, x => x.LoadOrderDisplayText, "Not active");
 
 		this.WhenAnyValue(x => x.Metadata.SourceLabel)
@@ -534,9 +536,10 @@ public class DivinityModData : DivinityBaseModData, ISelectable
 			}
 			else if (isForceLoaded)
 			{
-				SelectedColor = "#64F38F00";
-				ListColor = "#32C17200";
-				HasColorOverride = true;
+				// Redux presents pure override mods in their own section. Avoid the
+				// legacy full-row amber fill; the list style supplies a subtle,
+				// theme-aware Always Loaded accent instead.
+				HasColorOverride = false;
 			}
 			else if (isEditorMod)
 			{

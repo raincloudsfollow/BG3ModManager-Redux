@@ -37,7 +37,7 @@ public partial class CategoryNameDialog : AdonisWindow
 			? "Choose a color and an optional label. Leave the name empty for a line-only separator."
 			: canEditName
 			? "Choose a unique name and color. Category changes are saved between sessions."
-			: "Choose a unique color for this category. The change updates every category badge.";
+			: "Choose a color for this category. The change updates every category badge.";
 		ConfirmButton.Content = visualDividerMode ? "Save" : canEditName ? "Add" : "Save";
 		if (visualDividerMode)
 		{

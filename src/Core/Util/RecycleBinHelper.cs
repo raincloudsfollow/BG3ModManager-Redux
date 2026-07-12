@@ -43,7 +43,11 @@ public static class RecycleBinHelper
 
 	// Delete a file or move it to the recycle bin.
 	public static bool DeleteFile(string filename, bool confirm, bool deletePermanently = false)
+		=> DeleteFile(filename, confirm, deletePermanently, out _);
+
+	public static bool DeleteFile(string filename, bool confirm, bool deletePermanently, out string errorMessage)
 	{
+		errorMessage = null;
 		UIOption uiDisplayOptions = confirm ? UIOption.AllDialogs : UIOption.OnlyErrorDialogs;
 		RecycleOption reyclingOptions = deletePermanently ? RecycleOption.DeletePermanently : RecycleOption.SendToRecycleBin;
 
@@ -54,6 +58,7 @@ public static class RecycleBinHelper
 		}
 		catch (Exception ex)
 		{
+			errorMessage = ex.Message;
 			DivinityApp.Log("Error deleting file.\n" + ex.ToString());
 		}
 		return false;

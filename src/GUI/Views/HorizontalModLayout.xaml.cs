@@ -18,6 +18,7 @@ using System.Windows.Automation.Peers;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 
@@ -43,6 +44,11 @@ public class HorizontalModLayoutBase : ReactiveUserControl<MainWindowViewModel> 
 public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayout
 {
 	private const string CategoryAssignmentMenuTag = "ReduxCategoryAssignment";
+	private Point _categoryDragStart;
+	private ModCategoryFilterItem _draggedCategory;
+	private CategoryDropIndicatorAdorner _categoryDropIndicator;
+	private ListBoxItem _categoryDropTarget;
+	private bool _categoryDropAfter;
 	private const string VisualDividerMenuTag = "ReduxVisualDivider";
 	private const double DefaultModDetailsRowHeight = 295;
 	private const double MinimumExpandedModDetailsRowHeight = 295;
@@ -51,10 +57,13 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 	private const double CollapsedCategoriesWidth = 52;
 	private const double MinimumExpandedCategoriesWidth = 180;
 	private const double DefaultExpandedCategoriesWidth = 220;
+	private const double DefaultOverrideModsRowHeight = 160;
+	private const double MinimumExpandedOverrideModsRowHeight = 90;
 
 	private object _focusedList = null;
 	private double _lastExpandedModDetailsRowHeight = DefaultModDetailsRowHeight;
 	private double _lastExpandedCategoriesWidth = DefaultExpandedCategoriesWidth;
+	private double _lastExpandedOverrideModsRowHeight = DefaultOverrideModsRowHeight;
 	private readonly Dictionary<GridViewColumn, double> _visibleModListColumnWidths = new();
 	private readonly Dictionary<GridView, Dictionary<string, (GridViewColumn Column, int Index)>> _modListColumnRegistry = new();
 	private static readonly string[] OptionalModListColumns =
@@ -115,6 +124,104 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 	{
 		if (e.OriginalSource is DependencyObject source && source.FindVisualParent<ListBoxItem>()?.DataContext is ModCategoryFilterItem category)
 			ViewModel.MarkModCategorySeen(category.Name);
+	}
+
+	private void CategoryListBox_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+	{
+		_categoryDragStart = e.GetPosition(null);
+		_draggedCategory = (e.OriginalSource as DependencyObject)?.FindVisualParent<ListBoxItem>()?.DataContext as ModCategoryFilterItem;
+		if (_draggedCategory?.Name.Equals(MainWindowViewModel.AllModsCategory, StringComparison.OrdinalIgnoreCase) == true)
+			_draggedCategory = null;
+	}
+
+	private void CategoryListBox_PreviewMouseMove(object sender, MouseEventArgs e)
+	{
+		if (e.LeftButton != MouseButtonState.Pressed || _draggedCategory == null || sender is not ListBox listBox) return;
+		var position = e.GetPosition(null);
+		if (Math.Abs(position.X - _categoryDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+			Math.Abs(position.Y - _categoryDragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+
+		var dragged = _draggedCategory;
+		_draggedCategory = null;
+		DragDrop.DoDragDrop(listBox, dragged, DragDropEffects.Move);
+	}
+
+	private void CategoryListBox_DragOver(object sender, DragEventArgs e)
+	{
+		if (!e.Data.GetDataPresent(typeof(ModCategoryFilterItem)) ||
+			(e.OriginalSource as DependencyObject)?.FindVisualParent<ListBoxItem>() is not ListBoxItem targetItem)
+		{
+			ClearCategoryDropIndicator();
+			e.Effects = DragDropEffects.None;
+			e.Handled = true;
+			return;
+		}
+
+		var insertAfter = e.GetPosition(targetItem).Y > targetItem.ActualHeight / 2;
+		if (targetItem.DataContext is ModCategoryFilterItem target &&
+			target.Name.Equals(MainWindowViewModel.AllModsCategory, StringComparison.OrdinalIgnoreCase)) insertAfter = true;
+		ShowCategoryDropIndicator(targetItem, insertAfter);
+		e.Effects = DragDropEffects.Move;
+		e.Handled = true;
+	}
+
+	private void CategoryListBox_DragLeave(object sender, DragEventArgs e) => ClearCategoryDropIndicator();
+
+	private void CategoryListBox_Drop(object sender, DragEventArgs e)
+	{
+		if (e.Data.GetData(typeof(ModCategoryFilterItem)) is not ModCategoryFilterItem source ||
+			(e.OriginalSource as DependencyObject)?.FindVisualParent<ListBoxItem>() is not ListBoxItem targetItem ||
+			targetItem.DataContext is not ModCategoryFilterItem target)
+		{
+			ClearCategoryDropIndicator();
+			return;
+		}
+
+		var insertAfter = e.GetPosition(targetItem).Y > targetItem.ActualHeight / 2;
+		if (target.Name.Equals(MainWindowViewModel.AllModsCategory, StringComparison.OrdinalIgnoreCase)) insertAfter = true;
+		ClearCategoryDropIndicator();
+		ViewModel.MoveModCategory(source.Name, target.Name, insertAfter);
+		e.Handled = true;
+	}
+
+	private void ShowCategoryDropIndicator(ListBoxItem target, bool insertAfter)
+	{
+		if (_categoryDropTarget == target && _categoryDropAfter == insertAfter && _categoryDropIndicator != null) return;
+		ClearCategoryDropIndicator();
+		var layer = AdornerLayer.GetAdornerLayer(target);
+		if (layer == null) return;
+		var brush = TryFindResource("ReduxAccentHoverBrush") as Brush ?? System.Windows.Media.Brushes.MediumPurple;
+		_categoryDropTarget = target;
+		_categoryDropAfter = insertAfter;
+		_categoryDropIndicator = new CategoryDropIndicatorAdorner(target, insertAfter, brush);
+		layer.Add(_categoryDropIndicator);
+	}
+
+	private void ClearCategoryDropIndicator()
+	{
+		if (_categoryDropIndicator != null)
+			AdornerLayer.GetAdornerLayer(_categoryDropIndicator.AdornedElement)?.Remove(_categoryDropIndicator);
+		_categoryDropIndicator = null;
+		_categoryDropTarget = null;
+	}
+
+	private sealed class CategoryDropIndicatorAdorner : Adorner
+	{
+		private readonly bool _after;
+		private readonly Pen _pen;
+
+		public CategoryDropIndicatorAdorner(UIElement adornedElement, bool after, Brush brush) : base(adornedElement)
+		{
+			_after = after;
+			_pen = new Pen(brush, 2);
+			IsHitTestVisible = false;
+		}
+
+		protected override void OnRender(DrawingContext drawingContext)
+		{
+			var y = _after ? AdornedElement.RenderSize.Height - 1 : 1;
+			drawingContext.DrawLine(_pen, new Point(3, y), new Point(Math.Max(3, AdornedElement.RenderSize.Width - 3), y));
+		}
 	}
 
 	private void SaveCategoryFilterMenuItem_Click(object sender, RoutedEventArgs e)
@@ -557,7 +664,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 
 	private void RememberExpandedModDetailsHeight()
 	{
-		if (ModDetailsToggleButton.IsChecked == true && ModDetailsRow.ActualHeight >= MinimumExpandedModDetailsRowHeight)
+		if (ModDetailsRow.ActualHeight >= MinimumExpandedModDetailsRowHeight)
 		{
 			_lastExpandedModDetailsRowHeight = ModDetailsRow.ActualHeight;
 		}
@@ -603,6 +710,17 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 	private void ModDetailsGridSplitter_DragCompleted(object sender, DragCompletedEventArgs e)
 	{
 		Dispatcher.BeginInvoke(new Action(RememberExpandedModDetailsHeight));
+	}
+
+	private void RememberExpandedOverrideModsHeight()
+	{
+		if (ActiveModsListForcedModsRow.ActualHeight >= MinimumExpandedOverrideModsRowHeight)
+			_lastExpandedOverrideModsRowHeight = ActiveModsListForcedModsRow.ActualHeight;
+	}
+
+	private void OverrideModsGridSplitter_DragCompleted(object sender, DragCompletedEventArgs e)
+	{
+		Dispatcher.BeginInvoke(new Action(RememberExpandedOverrideModsHeight));
 	}
 
 	private void UpdateCategoriesLayout(bool isExpanded)
@@ -855,6 +973,7 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 		ModDetailsToggleButton.Checked += ModDetailsToggleButton_Checked;
 		ModDetailsToggleButton.Unchecked += ModDetailsToggleButton_Unchecked;
 		ModDetailsGridSplitter.DragCompleted += ModDetailsGridSplitter_DragCompleted;
+		ActiveModListViewGridSplitter.DragCompleted += OverrideModsGridSplitter_DragCompleted;
 
 		SetupListView(ActiveModsListView);
 		SetupListView(InactiveModsListView);
@@ -956,30 +1075,32 @@ public partial class HorizontalModLayout : HorizontalModLayoutBase, IModViewLayo
 
 				var gridLengthConverter = new GridLengthConverter();
 				var zeroHeight = (GridLength)gridLengthConverter.ConvertFrom(0);
-				var forceModsHeight = (GridLength)gridLengthConverter.ConvertFrom("2*");
+				var activeModsFullHeight = (GridLength)gridLengthConverter.ConvertFrom("1*");
 
 				d(ViewModel.WhenAnyValue(x => x.HasForceLoadedMods, x => x.IsAlwaysLoadedExpanded)
 					.ObserveOn(RxApp.MainThreadScheduler).Subscribe((state) =>
 				{
 					var hasAlwaysLoadedMods = state.Item1;
 					var showAlwaysLoadedContents = hasAlwaysLoadedMods && state.Item2;
-					foreach (var row in this.ActiveModListGrid.RowDefinitions.Where(x => x.Name != "ActiveModsListRow"))
+					ActiveModsListForcedModsRow.MinHeight = showAlwaysLoadedContents ? MinimumExpandedOverrideModsRowHeight : 0;
+					if (!showAlwaysLoadedContents)
+						RememberExpandedOverrideModsHeight();
+					// Keep the main list flexible and restore the exact user-sized Override
+					// Mods height. This also clears fixed heights left by the GridSplitter.
+					ActiveModsListRow.Height = activeModsFullHeight;
+					if (hasAlwaysLoadedMods)
 					{
-						if (hasAlwaysLoadedMods)
-						{
-							if (row.Name == "ActiveModsListGridRow")
-							{
-								row.Height = showAlwaysLoadedContents ? GridLength.Auto : zeroHeight;
-							}
-							else if (row.Name == "ActiveModsListForcedModsRow")
-							{
-								row.Height = showAlwaysLoadedContents ? forceModsHeight : GridLength.Auto;
-							}
-						}
-						else
-						{
-							row.Height = zeroHeight;
-						}
+						ActiveModsListGridRow.Height = showAlwaysLoadedContents ? GridLength.Auto : zeroHeight;
+						ActiveModsListForcedModsRow.Height = showAlwaysLoadedContents
+							? new GridLength(Math.Max(MinimumExpandedOverrideModsRowHeight, _lastExpandedOverrideModsRowHeight))
+							: GridLength.Auto;
+						ActiveModListViewGridSplitter.IsEnabled = showAlwaysLoadedContents;
+					}
+					else
+					{
+						ActiveModsListGridRow.Height = zeroHeight;
+						ActiveModsListForcedModsRow.Height = zeroHeight;
+						ActiveModListViewGridSplitter.IsEnabled = false;
 					}
 				}));
 

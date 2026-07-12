@@ -445,18 +445,7 @@
 							<RowDefinition Height="*" />
 						</Grid.RowDefinitions>
 						<StackPanel>
-							<StackPanel Orientation="Horizontal">
-								<TextBlock FontSize="20"
-									FontWeight="Bold"
-									Foreground="{DynamicResource ReduxTextPrimaryBrush}"
-									Text="{Binding Metadata.Title}"
-									TextTrimming="CharacterEllipsis" />
-								<ContentControl Margin="9,0,0,0"
-									VerticalAlignment="Center"
-									Content="{Binding}"
-									ContentTemplate="{StaticResource ModCategoryTemplate}" />
-							</StackPanel>
-							<WrapPanel Margin="0,5,0,0">
+							<WrapPanel Margin="0,1,0,0">
 								<Border ToolTip="Contains Mod Fixer. BG3 Patch 7 and newer generally do not require it, and Mod Fixer does not need to be installed separately.">
 									<Border.Style>
 										<Style BasedOn="{StaticResource ModDetailsLegacyStatusChipStyle}" TargetType="{x:Type Border}">
@@ -533,11 +522,6 @@
 								Visibility="{Binding SourceComponentVisibility}">
 								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
 									Text="{Binding SourceComponentSummary}" />
-							</Border>
-							<Border Style="{StaticResource ModDetailsMetadataChipStyle}"
-								ToolTip="The specific local package selected in the mod list.">
-								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
-									Text="{Binding DisplayName, StringFormat='Installed package: {0}'}" />
 							</Border>
 							<Border Style="{StaticResource ModDetailsMetadataChipStyle}">
 								<TextBlock Foreground="{DynamicResource ReduxTextSecondaryBrush}"
@@ -947,7 +931,14 @@
 								</Style.Triggers>
 							</Style>
 						</StackPanel.Style>
-						<TextBlock Style="{StaticResource ModSectionTitle}" Text="Categories" />
+						<TextBlock Style="{StaticResource ModSectionTitle}" Text="Categories">
+							<TextBlock.ToolTip>
+								<ToolTip MaxWidth="340">
+									<TextBlock Text="Redux automatically suggests categories from the information available for each mod. Provider tags and package details can be incomplete, so reviewing the suggestion and adjusting it when needed is recommended."
+										TextWrapping="Wrap" />
+								</ToolTip>
+							</TextBlock.ToolTip>
+						</TextBlock>
 					</StackPanel>
 					<ToggleButton Grid.Column="1"
 						Width="30"
@@ -974,16 +965,22 @@
 					</ToggleButton>
 				</Grid>
 				<Border Grid.Row="1" Background="{DynamicResource ReduxBorderBrush}" />
-				<ListBox Grid.Row="2"
+				<ListBox x:Name="CategoryListBox" Grid.Row="2"
 					Margin="6"
 					Padding="0"
+					AllowDrop="True"
 					Background="Transparent"
 					BorderThickness="0"
 					ItemsSource="{Binding ModCategoryFilters}"
 					ItemContainerStyle="{StaticResource ModCategoryListItemStyle}"
 					ScrollViewer.HorizontalScrollBarVisibility="Disabled"
 					SelectedIndex="0"
+					PreviewMouseLeftButtonDown="CategoryListBox_PreviewMouseLeftButtonDown"
+					PreviewMouseMove="CategoryListBox_PreviewMouseMove"
 					PreviewMouseLeftButtonUp="CategoryListBox_PreviewMouseLeftButtonUp"
+					DragOver="CategoryListBox_DragOver"
+					DragLeave="CategoryListBox_DragLeave"
+					Drop="CategoryListBox_Drop"
 					SelectedValue="{Binding SelectedModCategory, Mode=TwoWay}"
 					SelectedValuePath="Name">
 					<ListBox.Style>
@@ -1067,7 +1064,8 @@
 		<GridSplitter x:Name="CategoriesGridSplitter" Grid.Column="1"
 			Width="4"
 			HorizontalAlignment="Stretch"
-			VerticalAlignment="Stretch" />
+			VerticalAlignment="Stretch"
+			ShowsPreview="False" />
 		<Border Grid.Column="2"
 			Margin="5,4,5,10"
 			Style="{StaticResource ModSectionCard}">
@@ -1179,7 +1177,7 @@
 							<TextBlock FontSize="11" Foreground="{DynamicResource ReduxTextMutedBrush}"
 								Text="Always loaded while installed; overrides built-in game files outside the normal load order" />
 						</StackPanel>
-						<ToggleButton Grid.Column="1"
+						<ToggleButton x:Name="AlwaysLoadedToggleButton" Grid.Column="1"
 							Width="30" Height="28" Padding="0"
 							Style="{StaticResource CategoryPanelToggleStyle}"
 							IsChecked="{Binding IsAlwaysLoadedExpanded, Mode=TwoWay}"
@@ -1202,10 +1200,13 @@
 						Grid.Row="1"
 						MaxHeight="99999"
 						behavior:ScreenReaderHelperBehavior.Name="Force-Loaded Mods"
+						ContextMenuOpening="ModListView_ContextMenuOpening"
 						HideHeader="True"
 						ItemContainerStyle="{StaticResource DivinityModDataListItem}"
 						LinkedHeaderListView="{Binding ElementName=ActiveModsListView}"
-						View="{DynamicResource HeaderlessModGridView}" />
+						View="{DynamicResource HeaderlessModGridView}">
+						<c:ModListView.ContextMenu><ContextMenu /></c:ModListView.ContextMenu>
+					</c:ModListView>
 				</Grid>
 			</Grid>
 		</Grid>
@@ -1313,7 +1314,7 @@
 			Cursor="SizeNS"
 			ResizeBehavior="PreviousAndNext"
 			ResizeDirection="Rows"
-			ShowsPreview="True"
+			ShowsPreview="False"
 			Visibility="Collapsed">
 			<GridSplitter.PreviewStyle>
 				<Style TargetType="{x:Type Control}">
@@ -1340,17 +1341,10 @@
 			<GridSplitter.Template>
 				<ControlTemplate TargetType="{x:Type GridSplitter}">
 					<Grid Background="Transparent">
-						<Border x:Name="RestingHandle"
-							Width="64"
-							Height="2"
-							HorizontalAlignment="Center"
-							VerticalAlignment="Center"
-							Background="{DynamicResource ReduxBorderStrongBrush}"
-							CornerRadius="1" />
 						<Border x:Name="InteractionGlow"
-							Width="96"
 							Height="3"
-							HorizontalAlignment="Center"
+							Margin="10,0"
+							HorizontalAlignment="Stretch"
 							VerticalAlignment="Center"
 							Background="{DynamicResource ReduxAccentHoverBrush}"
 							CornerRadius="2"
@@ -1407,32 +1401,37 @@
 				<Grid Margin="12,0">
 					<Grid.ColumnDefinitions>
 						<ColumnDefinition Width="Auto" />
+						<ColumnDefinition Width="Auto" />
+						<ColumnDefinition Width="Auto" />
 						<ColumnDefinition Width="*" />
 						<ColumnDefinition Width="Auto" />
 					</Grid.ColumnDefinitions>
-					<Border Width="28"
-						Height="28"
-						Margin="0,0,10,0"
-						Background="{DynamicResource ReduxAccentSoftBrush}"
-						BorderBrush="{DynamicResource ReduxAccentBrush}"
-						BorderThickness="1"
-						CornerRadius="8">
-						<TextBlock HorizontalAlignment="Center"
-							VerticalAlignment="Center"
-							FontSize="12"
-							FontWeight="Bold"
-							Foreground="{DynamicResource ReduxAccentHoverBrush}"
-							Text="M" />
-					</Border>
+					<Ellipse Width="9" Height="9" Margin="2,0,10,0" VerticalAlignment="Center"
+						Fill="{Binding Content.DisplayCategories[0].Color, ElementName=ModDetailsContent, FallbackValue=#8F879E}"
+						Stroke="{DynamicResource ReduxBorderStrongBrush}" StrokeThickness="1"
+						ToolTip="Primary mod category color" />
 					<TextBlock Grid.Column="1"
 						VerticalAlignment="Center"
 						FontSize="15"
 						FontWeight="SemiBold"
 						Foreground="{DynamicResource ReduxTextPrimaryBrush}"
-						Text="{Binding Content.DisplayName, ElementName=ModDetailsContent, TargetNullValue='Selected Mod'}"
+						MaxWidth="420"
+						Text="{Binding Content.Metadata.Title, ElementName=ModDetailsContent, TargetNullValue='Selected Mod'}"
 						TextTrimming="CharacterEllipsis" />
+					<ContentControl Grid.Column="2" Margin="9,0,0,0" VerticalAlignment="Center"
+						Content="{Binding Content, ElementName=ModDetailsContent}"
+						ContentTemplate="{StaticResource ModCategoryTemplate}" />
+					<Border Grid.Column="3" MaxWidth="360" Margin="9,0,8,0" Padding="8,3"
+						HorizontalAlignment="Left" VerticalAlignment="Center"
+						Background="{DynamicResource ReduxSurfaceMutedBrush}"
+						BorderBrush="{DynamicResource ReduxBorderBrush}" BorderThickness="1" CornerRadius="8"
+						ToolTip="{Binding Content.FileName, ElementName=ModDetailsContent}">
+						<TextBlock FontSize="11" Foreground="{DynamicResource ReduxTextMutedBrush}"
+							Text="{Binding Content.FileName, ElementName=ModDetailsContent, TargetNullValue='Local package'}"
+							TextTrimming="CharacterEllipsis" />
+					</Border>
 					<ToggleButton x:Name="ModDetailsToggleButton"
-						Grid.Column="2"
+						Grid.Column="4"
 						IsChecked="True"
 						Style="{StaticResource ModDetailsToggleStyle}"
 						ToolTip="Collapse or expand mod details" />

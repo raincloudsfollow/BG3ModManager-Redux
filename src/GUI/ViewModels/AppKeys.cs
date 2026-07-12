@@ -78,7 +78,6 @@ public class AppKeys : ReactiveObject
 	[MenuSettings("Edit", "Toggle Focus Filter for Current List", AddSeparator = true)]
 	public Hotkey ToggleFilterFocus { get; private set; } = new Hotkey(Key.F, ModifierKeys.Control);
 
-	[MenuSettings("Edit", "Show File Names for Mods")]
 	public Hotkey ToggleFileNameDisplay { get; private set; } = new Hotkey(Key.None);
 
 	[MenuSettings("Edit", "Delete Selected Mods...", AddSeparator = true)]

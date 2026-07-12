@@ -14,12 +14,14 @@ public class FileDeletionCompleteEventArgs : EventArgs
 {
 	public int TotalFilesDeleted => DeletedFiles?.Count ?? 0;
 	public List<ModFileDeletionData> DeletedFiles { get; set; }
+	public List<string> FailureMessages { get; set; }
 	public bool RemoveFromLoadOrder { get; set; }
 	public bool IsDeletingDuplicates { get; set; }
 
 	public FileDeletionCompleteEventArgs()
 	{
 		DeletedFiles = [];
+		FailureMessages = [];
 	}
 }
 
@@ -78,23 +80,36 @@ public class DeleteFilesViewData : BaseProgressViewModel
 						DivinityApp.Log("Deletion stopped.");
 						break;
 					}
-					if (File.Exists(f.FilePath))
+					if (!File.Exists(f.FilePath))
+					{
+						DivinityApp.Log($"Mod file was already absent: '{f.FilePath}'. Removing the stale UI entry.");
+						eventArgs.DeletedFiles.Add(f);
+					}
+					else
 					{
 						await UpdateProgress("", $"Deleting {f.FilePath}...");
-#if DEBUG
-						eventArgs.DeletedFiles.Add(f);
-#else
-						if (RecycleBinHelper.DeleteFile(f.FilePath, false, PermanentlyDelete))
+						var deleteReportedSuccess = RecycleBinHelper.DeleteFile(f.FilePath, false, PermanentlyDelete, out var deleteError);
+						if (deleteReportedSuccess && !File.Exists(f.FilePath))
 						{
 							eventArgs.DeletedFiles.Add(f);
-							DivinityApp.Log($"Deleted mod file '{f.FilePath}'");
+							DivinityApp.Log($"Deleted mod file '{f.FilePath}' ({(PermanentlyDelete ? "permanently" : "Recycle Bin")}).");
 						}
-#endif
+						else
+						{
+							var reason = !String.IsNullOrWhiteSpace(deleteError)
+								? deleteError
+								: File.Exists(f.FilePath) ? "The file still exists after the delete operation." : "The delete operation failed.";
+							var failure = $"{Path.GetFileName(f.FilePath)}: {reason}";
+							eventArgs.FailureMessages.Add(failure);
+							DivinityApp.Log($"Failed to delete mod file '{f.FilePath}': {reason}");
+						}
 					}
 				}
 				catch (Exception ex)
 				{
-					DivinityApp.Log($"Error deleting file '${f.FilePath}':\n{ex}");
+					var failure = $"{Path.GetFileName(f.FilePath)}: {ex.Message}";
+					eventArgs.FailureMessages.Add(failure);
+					DivinityApp.Log($"Error deleting file '{f.FilePath}':\n{ex}");
 				}
 				await UpdateProgress("", "", ProgressValue + progressInc);
 			}

@@ -218,19 +218,20 @@ public class MainWindowViewModel : BaseHistoryViewModel, IActivatableViewModel, 
 	[
 		("User Interface", ["user interface", "interface", "improvedui", "ui", "hud", "menu", "hotbar"]),
 		("Classes", ["class", "subclass", "multiclass"]),
+		("Spells", ["spell", "spells", "cantrip", "cantrips", "spellbook"]),
 		("Cosmetics", ["cosmetic", "hair", "hairstyle", "face", "head", "makeup", "tattoo", "appearance", "dress", "outfit", "dye"]),
 		("Libraries", ["library", "framework", "dependency", "communitylibrary", "api"]),
 		("Patches", ["patch", "compatibility", "hotfix", "bugfix"]),
 		("Overhauls", ["overhaul", "total conversion"]),
 		("Companions", ["companion", "astarion", "gale", "karlach", "laezel", "shadowheart", "wyll", "minthara", "halsin", "jaheira", "minsc"]),
 		("Utilities", ["utility", "tool", "mod fixer", "script extender", "achievement enabler", "native camera"]),
-		("Gameplay", ["gameplay", "balance", "combat", "spell", "feat", "weapon", "armor", "equipment", "gold", "weight", "carry", "level", "quest", "race", "origin"]),
+		("Gameplay", ["gameplay", "balance", "combat", "feat", "weapon", "armor", "equipment", "gold", "weight", "carry", "level", "quest", "race", "origin"]),
 		("Overrides", ["override", "always loaded", "file override"])
 	];
 	private static readonly Dictionary<string, string> ReduxCategoryDefaultColors = new(StringComparer.OrdinalIgnoreCase)
 	{
 		[AllModsCategory] = "#8A6AF1", [UncategorizedModsCategory] = "#8F879E",
-		["User Interface"] = "#8A6AF1", ["Classes"] = "#3B82F6", ["Cosmetics"] = "#D45A9E",
+		["User Interface"] = "#8A6AF1", ["Classes"] = "#3B82F6", ["Spells"] = "#7768D8", ["Cosmetics"] = "#D45A9E",
 		["Libraries"] = "#3FA37A", ["Patches"] = "#71B96B", ["Overhauls"] = "#D66B55",
 		["Companions"] = "#C9963E", ["Utilities"] = "#22B8C5", ["Gameplay"] = "#D7A24B",
 		["Overrides"] = "#C65362"
@@ -1077,21 +1078,6 @@ Directory the zip will be extracted to:
 			if (!Window.SettingsWindow.IsVisible && IsInitialized)
 			{
 				SaveSettings();
-			}
-		});
-
-		Settings.WhenAnyValue(x => x.DisplayFileNames).Subscribe((b) =>
-		{
-			if (View != null && View.MenuItems.TryGetValue("ToggleFileNameDisplay", out var menuItem))
-			{
-				if (b)
-				{
-					menuItem.Header = "Show Display Names for Mods";
-				}
-				else
-				{
-					menuItem.Header = "Show File Names for Mods";
-				}
 			}
 		});
 
@@ -2614,6 +2600,21 @@ Directory the zip will be extracted to:
 		});
 	}
 
+	private void ShowReduxPreviewWarningIfRequired()
+	{
+		if (Settings.ReduxPreviewWarningAcknowledged || !_firstRun)
+		{
+			return;
+		}
+
+		var warningWindow = new ReduxPreviewWarningWindow { Owner = Window };
+		if (warningWindow.ShowDialog() == true)
+		{
+			Settings.ReduxPreviewWarningAcknowledged = true;
+			SaveSettings();
+		}
+	}
+
 	private void ShowModioSupportWarningIfRequired(IEnumerable<DivinityModData> loadedUserMods)
 	{
 		if (Settings.ModioSupportWarningAcknowledged
@@ -2885,6 +2886,7 @@ Directory the zip will be extracted to:
 			IsRefreshing = false;
 			IsLoadingOrder = false;
 			IsInitialized = true;
+			ShowReduxPreviewWarningIfRequired();
 			LoadNexusModsMetadataBackground();
 			LoadModioMetadataBackground();
 
@@ -4751,8 +4753,10 @@ Directory the zip will be extracted to:
 			{
 				category.Name,
 				Index = index,
-				Score = (CategorySourceContainsAny(nameSource, category.Keywords) ? 12 : 0)
-					+ (CategorySourceContainsAny(tagSource, category.Keywords) ? 8 : 0)
+				// An explicit package/project name is a stronger signal than broad
+				// provider tags or descriptive prose (for example, "5e Spells").
+				Score = (CategorySourceContainsAny(nameSource, category.Keywords) ? 20 : 0)
+					+ (CategorySourceContainsAny(tagSource, category.Keywords) ? 12 : 0)
 					+ (CategorySourceContainsAny(summarySource, category.Keywords) ? 4 : 0)
 					+ (CategorySourceContainsAny(descriptionSource, category.Keywords) ? 1 : 0)
 			})
@@ -4800,12 +4804,55 @@ Directory the zip will be extracted to:
 			?? ReduxCustomCategoryPalette[(Settings.CustomModCategories?.Count ?? 0) % ReduxCustomCategoryPalette.Length];
 	}
 
-	public IReadOnlyList<string> GetAllModCategories() => ReduxCategoryRules
-		.Select(category => category.Name)
-		.Concat(Settings.CustomModCategories ?? Enumerable.Empty<string>())
-		.Distinct(StringComparer.OrdinalIgnoreCase)
-		.OrderBy(category => category, StringComparer.CurrentCultureIgnoreCase)
+	private IReadOnlyList<string> ApplySavedCategoryOrder(IEnumerable<string> categories)
+	{
+		var available = categories.Where(category => !String.IsNullOrWhiteSpace(category))
+			.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+		var ordered = (Settings.ModCategoryDisplayOrder ?? new List<string>())
+			.Where(saved => available.Contains(saved, StringComparer.OrdinalIgnoreCase))
+			.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+		ordered.AddRange(available.Where(category => !ordered.Contains(category, StringComparer.OrdinalIgnoreCase)));
+		return ordered;
+	}
+
+	private IReadOnlyList<string> GetSidebarCategoryOrder()
+	{
+		var ordered = ApplySavedCategoryOrder(ReduxCategoryRules
+			.Select(category => category.Name)
+			.Concat(Settings.CustomModCategories ?? Enumerable.Empty<string>())
+			.Where(category => !category.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase)))
+			.ToList();
+		ordered.Add(UncategorizedModsCategory);
+		return ordered;
+	}
+
+	public IReadOnlyList<string> GetAllModCategories() => GetSidebarCategoryOrder()
+		.Where(category => !category.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase))
 		.ToList();
+
+	public void MoveModCategory(string sourceCategory, string targetCategory, bool insertAfter)
+	{
+		if (String.IsNullOrWhiteSpace(sourceCategory) || String.IsNullOrWhiteSpace(targetCategory) ||
+			sourceCategory.Equals(AllModsCategory, StringComparison.OrdinalIgnoreCase) ||
+			sourceCategory.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase) ||
+			sourceCategory.Equals(targetCategory, StringComparison.OrdinalIgnoreCase)) return;
+
+		var order = GetSidebarCategoryOrder().ToList();
+		var source = order.FirstOrDefault(category => category.Equals(sourceCategory, StringComparison.OrdinalIgnoreCase));
+		if (source == null) return;
+		order.Remove(source);
+		var targetIndex = targetCategory.Equals(AllModsCategory, StringComparison.OrdinalIgnoreCase)
+			? 0
+			: order.FindIndex(category => category.Equals(targetCategory, StringComparison.OrdinalIgnoreCase));
+		if (targetIndex < 0) targetIndex = order.Count;
+		else if (insertAfter && !targetCategory.Equals(AllModsCategory, StringComparison.OrdinalIgnoreCase)) targetIndex++;
+		order.Insert(Math.Clamp(targetIndex, 0, order.Count), source);
+		order.RemoveAll(category => category.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase));
+		order.Add(UncategorizedModsCategory);
+		Settings.ModCategoryDisplayOrder = order;
+		SaveSettings();
+		RefreshModCategories();
+	}
 
 	public IReadOnlyList<string> GetAssignableModCategories() => GetAllModCategories().Where(IsModCategoryEnabled).ToList();
 	public bool IsCustomModCategory(string category) => Settings.CustomModCategories?.Contains(category, StringComparer.OrdinalIgnoreCase) == true;
@@ -4981,6 +5028,7 @@ Directory the zip will be extracted to:
 		var existing = Settings.CustomModCategories?.FirstOrDefault(item => item.Equals(category, StringComparison.OrdinalIgnoreCase));
 		if (existing == null) return false;
 		Settings.CustomModCategories.Remove(existing);
+		Settings.ModCategoryDisplayOrder?.RemoveAll(item => item.Equals(existing, StringComparison.OrdinalIgnoreCase));
 		Settings.ModCategoryColors.Remove(existing);
 		Settings.DisabledModCategories.RemoveAll(item => item.Equals(existing, StringComparison.OrdinalIgnoreCase));
 		Settings.UnseenCategoryModIds.Remove(existing);
@@ -5037,14 +5085,6 @@ Directory the zip will be extracted to:
 			return false;
 		}
 		color = Regex.IsMatch(color ?? String.Empty, "^#[0-9A-Fa-f]{6}$") ? color.ToUpperInvariant() : GetNextCustomCategoryColor();
-		var colorOwner = GetAllModCategories().FirstOrDefault(category =>
-			GetCategoryColor(category).Equals(color, StringComparison.OrdinalIgnoreCase));
-		if (colorOwner != null)
-		{
-			error = $"That color is already used by '{colorOwner}'. Choose a unique color for this category.";
-			return false;
-		}
-
 		Settings.CustomModCategories.Add(categoryName);
 		Settings.CustomModCategories = Settings.CustomModCategories
 			.OrderBy(category => category, StringComparer.CurrentCultureIgnoreCase)
@@ -5063,14 +5103,6 @@ Directory the zip will be extracted to:
 		if (String.IsNullOrWhiteSpace(category) || !Regex.IsMatch(color ?? String.Empty, "^#[0-9A-Fa-f]{6}$"))
 		{
 			error = "Choose a valid category color.";
-			return false;
-		}
-		var colorOwner = GetAllModCategories().FirstOrDefault(existingCategory =>
-			!existingCategory.Equals(category, StringComparison.OrdinalIgnoreCase) &&
-			GetCategoryColor(existingCategory).Equals(color, StringComparison.OrdinalIgnoreCase));
-		if (colorOwner != null)
-		{
-			error = $"That color is already used by '{colorOwner}'. Choose a unique color for this category.";
 			return false;
 		}
 		Settings.ModCategoryColors[category] = color.ToUpperInvariant();
@@ -5211,30 +5243,17 @@ Directory the zip will be extracted to:
 		}
 
 		ModCategoryFilters.Clear();
-		ModCategoryFilters.Add(new ModCategoryFilterItem(AllModsCategory, allMods.Count, GetCategoryColor(AllModsCategory), CategoryHasNewMods(AllModsCategory)));
-		foreach (var category in ReduxCategoryRules)
-		{
-			if (!IsModCategoryEnabled(category.Name)) continue;
-			var count = allMods.Count(mod => mod.DisplayCategories.Any(item => item.Name.Equals(category.Name, StringComparison.OrdinalIgnoreCase)));
-			if (!Settings.HideEmptyModCategories || count > 0)
-			{
-				ModCategoryFilters.Add(new ModCategoryFilterItem(category.Name, count, GetCategoryColor(category.Name), CategoryHasNewMods(category.Name)));
-			}
-		}
-		foreach (var customCategory in Settings.CustomModCategories ?? Enumerable.Empty<string>())
-		{
-			if (!IsModCategoryEnabled(customCategory)) continue;
-			var count = allMods.Count(mod => mod.DisplayCategories.Any(item => item.Name.Equals(customCategory, StringComparison.OrdinalIgnoreCase)));
-			if (!Settings.HideEmptyModCategories || count > 0)
-			{
-				ModCategoryFilters.Add(new ModCategoryFilterItem(customCategory, count, GetCategoryColor(customCategory), CategoryHasNewMods(customCategory)));
-			}
-		}
 		var uncategorizedCount = allMods.Count(mod => mod.DisplayCategories.Count == 0 ||
 			mod.DisplayCategories.Any(item => item.Name.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase)));
-		if (!Settings.HideEmptyModCategories || uncategorizedCount > 0)
+		ModCategoryFilters.Add(new ModCategoryFilterItem(AllModsCategory, allMods.Count, GetCategoryColor(AllModsCategory), CategoryHasNewMods(AllModsCategory)));
+		foreach (var category in GetSidebarCategoryOrder())
 		{
-			ModCategoryFilters.Add(new ModCategoryFilterItem(UncategorizedModsCategory, uncategorizedCount, GetCategoryColor(UncategorizedModsCategory), CategoryHasNewMods(UncategorizedModsCategory)));
+			if (!IsModCategoryEnabled(category)) continue;
+			var count = category.Equals(UncategorizedModsCategory, StringComparison.OrdinalIgnoreCase)
+				? uncategorizedCount
+				: allMods.Count(mod => mod.DisplayCategories.Any(item => item.Name.Equals(category, StringComparison.OrdinalIgnoreCase)));
+			if (!Settings.HideEmptyModCategories || count > 0)
+				ModCategoryFilters.Add(new ModCategoryFilterItem(category, count, GetCategoryColor(category), CategoryHasNewMods(category)));
 		}
 
 		SelectedModCategory = ModCategoryFilters.Any(category => category.Name.Equals(previousSelection, StringComparison.OrdinalIgnoreCase))
@@ -5376,7 +5395,8 @@ Directory the zip will be extracted to:
 
 			InactiveMods.RemoveMany(InactiveMods.Where(x => deletedMods.Contains(x.UUID)));
 			ActiveMods.RemoveMany(ActiveMods.Where(x => deletedMods.Contains(x.UUID)));
-			ForceLoadedMods.RemoveMany(ForceLoadedMods.Where(x => deletedMods.Contains(x.UUID)));
+			// ForceLoadedMods is an intentionally read-only projection of the private mod cache.
+			// Removing the cache keys above updates that projection without violating its safety boundary.
 		});
 	}
 

@@ -404,6 +404,13 @@ public partial class MainViewControl : MainViewControlViewBase
 				}
 				main.Activate();
 			}
+			if (e.FailureMessages.Count > 0)
+			{
+				var firstFailure = e.FailureMessages[0];
+				var additional = e.FailureMessages.Count > 1 ? $" (+{e.FailureMessages.Count - 1} more; see the log)" : String.Empty;
+				ViewModel.ShowAlert($"Could not delete {e.FailureMessages.Count} mod file(s). {firstFailure}{additional}", AlertType.Danger, 60);
+				main.Activate();
+			}
 		};
 
 		FocusManager.SetFocusedElement(this, ModOrderPanel);

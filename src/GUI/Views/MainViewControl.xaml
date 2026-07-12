@@ -712,6 +712,27 @@
 										</ContextMenu>
 									</Button.ContextMenu>
 								</Button>
+								<Button x:Name="QuickLinksButton"
+									MinWidth="64"
+									Style="{StaticResource ToolbarTextButtonStyle}"
+									Click="QuickLinksButton_Click"
+									ToolTip="Open folders and online resources">
+									<TextBlock Text="Open  &#x25BE;" />
+									<Button.ContextMenu>
+										<ContextMenu>
+											<MenuItem Header="FOLDERS" IsEnabled="False" />
+											<MenuItem Command="{Binding Keys.OpenModsFolder.Command}" Header="Mods Folder" InputGestureText="Ctrl+1" />
+											<MenuItem Command="{Binding Keys.OpenGameFolder.Command}" Header="Game Folder" InputGestureText="Ctrl+2" />
+											<MenuItem Command="{Binding Keys.OpenLogsFolder.Command}" Header="Extender Logs Folder" InputGestureText="Ctrl+4" />
+											<MenuItem Header="Save Games Folder" Click="OpenSaveGamesFolder_Click" />
+											<Separator />
+											<MenuItem Header="ONLINE" IsEnabled="False" />
+											<MenuItem Header="BG3 on Nexus Mods" Click="OpenBg3Nexus_Click" />
+											<MenuItem Header="BG3 Script Extender on GitHub" Click="OpenScriptExtenderRepo_Click" />
+											<MenuItem Header="BG3 Mod Manager Redux on GitHub" Click="OpenReduxRepo_Click" />
+										</ContextMenu>
+									</Button.ContextMenu>
+								</Button>
 										</StackPanel>
 									</StackPanel>
 								</Border>
@@ -740,29 +761,6 @@
 								    SelectedValuePath="Value"
 								    ToolTip="Choose what Redux does after launching the game." />
 										</StackPanel>
-									</StackPanel>
-								</Border>
-								<Border Style="{StaticResource ToolbarGroupStyle}">
-									<StackPanel>
-										<TextBlock Style="{StaticResource ToolbarGroupLabelStyle}" Text="QUICK LINKS" />
-										<Button x:Name="QuickLinksButton"
-											Style="{StaticResource ToolbarTextButtonStyle}"
-											Click="QuickLinksButton_Click"
-											ToolTip="Open useful BG3 and Redux links">
-											<TextBlock Text="Quick Links  &#x25BE;" />
-										<Button.ContextMenu>
-											<ContextMenu>
-												<MenuItem Command="{Binding Keys.OpenModsFolder.Command}" Header="Open Mods Folder" InputGestureText="Ctrl+1" />
-												<MenuItem Command="{Binding Keys.OpenGameFolder.Command}" Header="Open Game Folder" InputGestureText="Ctrl+2" />
-												<MenuItem Command="{Binding Keys.OpenLogsFolder.Command}" Header="Open Extender Logs Folder" InputGestureText="Ctrl+4" />
-												<MenuItem Header="Open Save Games Folder" Click="OpenSaveGamesFolder_Click" />
-												<Separator />
-												<MenuItem Header="BG3 on Nexus Mods" Click="OpenBg3Nexus_Click" />
-												<MenuItem Header="BG3 Script Extender on GitHub" Click="OpenScriptExtenderRepo_Click" />
-												<MenuItem Header="BG3 Mod Manager Redux on GitHub" Click="OpenReduxRepo_Click" />
-											</ContextMenu>
-											</Button.ContextMenu>
-										</Button>
 									</StackPanel>
 								</Border>
 								<Button x:Name="OpenDonationPageButton"
