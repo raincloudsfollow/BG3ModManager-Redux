@@ -19,8 +19,8 @@ os.chdir(script_dir)
 
 version = get_arg(1, None)
 
-file_name = f"BG3ModManager_v{version}.zip"
-export_file = "BG3ModManager_Latest.zip"
+file_name = f"BG3ModManager-Redux_v{version}.zip"
+export_file = "BG3ModManager-Redux-Latest.zip"
 print(f"Writing release zip:{file_name}")
 
 def zipdir(src, zip_name):

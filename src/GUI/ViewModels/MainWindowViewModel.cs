@@ -4458,6 +4458,15 @@ Directory the zip will be extracted to:
 
 	public void CheckForUpdates(bool force = false, bool skipTimeCheck = false)
 	{
+		if (!DivinityApp.REDUX_APPLICATION_UPDATES_ENABLED)
+		{
+			if (force)
+			{
+				ShowAlert($"Application updates are disabled for Redux {DivinityApp.REDUX_DISPLAY_VERSION}. Private alpha builds are updated manually.", AlertType.Info, 30);
+			}
+			return;
+		}
+
 		var updateVM = Services.Get<AppUpdateWindowViewModel>();
 		if (updateVM != null)
 		{
@@ -5980,9 +5989,7 @@ Directory the zip will be extracted to:
 		var productName = ((AssemblyProductAttribute)Attribute.GetCustomAttribute(assembly, typeof(AssemblyProductAttribute), false)).Product;
 		AppTitle = productName;
 		Version = assembly.GetName().Version;
-		// Keep the inherited assembly version for updater/cache compatibility, while
-		// presenting Redux's own early-development version in the window chrome.
-		Title = $"{productName} v0.1.0-preview";
+		Title = $"{productName} v{DivinityApp.REDUX_DISPLAY_VERSION}";
 		AutoUpdater.InstalledVersion = Version;
 		AutoUpdater.AppTitle = Title;
 		DivinityApp.Log($"{Title} initializing...");
@@ -6446,7 +6453,10 @@ Directory the zip will be extracted to:
 		var canCheckForUpdates = this.WhenAnyValue(x => x.MainProgressIsActive, b => b == false);
 		void checkForUpdatesAction()
 		{
-			ShowAlert("Checking for updates...", AlertType.Info, 30);
+			if (DivinityApp.REDUX_APPLICATION_UPDATES_ENABLED)
+			{
+				ShowAlert("Checking for Redux updates...", AlertType.Info, 30);
+			}
 			CheckForUpdates(true);
 			SaveSettings();
 		}

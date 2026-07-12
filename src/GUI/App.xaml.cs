@@ -31,7 +31,7 @@ public partial class App : Application
 
 		var appUpdateVM = new AppUpdateWindowViewModel();
 
-		AutoUpdater.HttpUserAgent = "BG3ModManagerUser";
+		AutoUpdater.HttpUserAgent = "BG3ModManagerRedux";
 		AutoUpdater.RunUpdateAsAdmin = false;
 		AutoUpdater.Synchronous = false;
 		AutoUpdater.CheckForUpdateEvent += (e) =>

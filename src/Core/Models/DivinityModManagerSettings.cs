@@ -94,8 +94,8 @@ public class DivinityModManagerSettings : ReactiveObject
 	[SettingsEntry("Add Missing Dependencies When Exporting", "Automatically add dependency mods above their dependents in the exported load order, if omitted from the active order")]
 	[DataMember, Reactive] public bool AutoAddDependenciesWhenExporting { get; set; }
 
-	[DefaultValue(true)]
-	[SettingsEntry("Automatically Check For Updates", "Automatically check for updates when the program starts")]
+	[DefaultValue(false)]
+	[SettingsEntry("Automatically Check For Updates", "Reserved for future Redux releases. Application self-updating is disabled during the private alpha.")]
 	[DataMember, Reactive] public bool CheckForUpdates { get; set; }
 
 	[DefaultValue("")]

@@ -13,15 +13,17 @@
 		<ApplicationIcon>BG3ModManager.ico</ApplicationIcon>
 
 		<AssemblyName>BG3ModManager</AssemblyName>
-		<AssemblyTitle>BG3ModManager</AssemblyTitle>
+		<AssemblyTitle>Baldur's Gate 3 Mod Manager Redux</AssemblyTitle>
 
-		<AssemblyVersion>1.0.12.9</AssemblyVersion>
-		<FileVersion>1.0.12.9</FileVersion>
+		<AssemblyVersion>0.1.0.1</AssemblyVersion>
+		<FileVersion>0.1.0.1</FileVersion>
+		<InformationalVersion>0.1.0-alpha.1</InformationalVersion>
+		<IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
 
 		<Product>Baldur's Gate 3 Mod Manager Redux</Product>
-		<Company>LaughingLeader</Company>
-		<Copyright>Copyright © 2020</Copyright>
-		<Description>A mod manager for Baldur's Gate 3.</Description>
+		<Company>raincloudsfollow</Company>
+		<Copyright>Original project © LaughingLeader; Redux modifications © 2026 raincloudsfollow</Copyright>
+		<Description>A modernized, community-driven fork of Baldur's Gate 3 Mod Manager.</Description>
 
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<OutputPath>$(SolutionDir)\bin\$(Configuration)\</OutputPath>

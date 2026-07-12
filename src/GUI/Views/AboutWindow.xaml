@@ -56,8 +56,9 @@
 				<StackPanel Margin="14,0,0,0" VerticalAlignment="Center">
 					<TextBlock x:Name="TitleText" FontSize="21" FontWeight="SemiBold"
 						Foreground="{DynamicResource ReduxTextPrimaryBrush}" />
-					<TextBlock Margin="0,3,0,0" Foreground="{DynamicResource ReduxTextSecondaryBrush}"
-						Text="v0.1.0-preview  •  A modern interface for Baldur's Gate 3 mod management" />
+					<TextBlock Margin="0,3,0,0" Foreground="{DynamicResource ReduxTextSecondaryBrush}">
+						<Run Text="v" /><Run Text="{x:Static app:DivinityApp.REDUX_DISPLAY_VERSION}" /><Run Text="  •  A modern interface for Baldur's Gate 3 mod management" />
+					</TextBlock>
 				</StackPanel>
 			</StackPanel>
 
