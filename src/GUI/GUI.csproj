@@ -22,7 +22,7 @@
 
 		<Product>Baldur's Gate 3 Mod Manager Redux</Product>
 		<Company>raincloudsfollow</Company>
-		<Copyright>Original project © LaughingLeader; Redux modifications © 2026 raincloudsfollow</Copyright>
+		<Copyright>© 2026 raincloudsfollow — BG3 Mod Manager Redux</Copyright>
 		<Description>A modernized, community-driven fork of Baldur's Gate 3 Mod Manager.</Description>
 
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
